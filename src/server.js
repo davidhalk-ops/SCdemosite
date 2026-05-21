@@ -127,8 +127,7 @@ app.post('/api/verify-email', async (req, res) => {
     const isEnabled   = flag.isEnabled();
     const grantaccess = flag.getVariable('grantaccess', false);
     const approved    = isEnabled && grantaccess === true;
-    console.log('[VWO] verify-email — email:', email, '| isEnabled:', isEnabled, '| grantaccess:', grantaccess, '| approved:', approved);
-    res.json({ approved, _debug: { isEnabled, grantaccess } });
+    res.json({ approved });
   } catch(e) {
     console.error('[VWO] SCDemosite check failed:', e.message);
     res.status(500).json({ error: 'Verification service unavailable' });
