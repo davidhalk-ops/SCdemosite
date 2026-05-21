@@ -1,0 +1,1927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+/* RECOMMENDATION TAG — loaded dynamically in boot() after config is fetched */
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>True North — Powered by AB Tasty Commerce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #C8102E;
+    --red-dark: #9B0B22;
+    --red-light: #F5E6E9;
+    --white: #FAFAF8;
+    --cream: #F4F1EA;
+    --black: #1A1A18;
+    --gray: #6B6B68;
+    --gray-light: #E8E5DC;
+    --gold: #C5A028;
+    --gold-light: #F7EDD0;
+    --pine: #2D5016;
+    --pine-light: #EAF0E1;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'DM Sans', sans-serif;
+    --nav-h: 68px;
+    --shadow: 0 2px 16px rgba(26,26,24,0.10);
+    --shadow-lg: 0 8px 40px rgba(26,26,24,0.14);
+    --radius: 4px;
+    --radius-lg: 10px;
+  }
+
+  body { font-family: var(--font-body); background: var(--white); color: var(--black); line-height: 1.6; }
+  a { text-decoration: none; color: inherit; }
+  button { cursor: pointer; font-family: var(--font-body); border: none; }
+  img { display: block; max-width: 100%; }
+
+  /* ====== LAYOUT ====== */
+  .page { min-height: 100vh; display: flex; flex-direction: column; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* ====== NAV ====== */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--white);
+    border-bottom: 1.5px solid var(--gray-light);
+    height: var(--nav-h);
+  }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    height: 100%; display: flex; align-items: center; gap: 32px;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--font-display); font-size: 22px; font-weight: 900;
+    color: var(--black); letter-spacing: -0.5px;
+  }
+  .nav-logo .leaf { color: var(--red); font-size: 20px; }
+  .nav-links { display: flex; gap: 4px; flex: 1; }
+  .nav-links a {
+    padding: 6px 14px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; color: var(--gray);
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-links a:hover, .nav-links a.active { color: var(--black); background: var(--cream); }
+  .nav-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .nav-search {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--cream); border: 1px solid var(--gray-light);
+    border-radius: 20px; padding: 7px 16px; font-size: 13px; color: var(--gray);
+    width: 200px;
+  }
+  .nav-icon {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: transparent; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--gray); transition: background 0.15s;
+  }
+  .nav-icon:hover { background: var(--cream); }
+  .cart-badge {
+    position: relative;
+  }
+  .cart-badge .badge {
+    position: absolute; top: 4px; right: 4px;
+    background: var(--red); color: white; border-radius: 50%;
+    width: 16px; height: 16px; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ====== ANNOUNCEMENT BAR ====== */
+  .announcement {
+    background: var(--red); color: white;
+    text-align: center; padding: 9px 24px;
+    font-size: 13px; font-weight: 500; letter-spacing: 0.3px;
+  }
+  .announcement strong { font-weight: 700; }
+
+  /* ====== HERO ====== */
+  .hero {
+    background: var(--black);
+    min-height: 520px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    overflow: hidden; position: relative;
+  }
+  .hero-content {
+    padding: 80px 64px 80px 48px;
+    display: flex; flex-direction: column; justify-content: center;
+    position: relative; z-index: 2;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(200,16,46,0.2); border: 1px solid rgba(200,16,46,0.4);
+    color: #FF6B7A; border-radius: 20px; padding: 5px 14px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+    width: fit-content; margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-family: var(--font-display); font-size: 58px; font-weight: 900;
+    color: white; line-height: 1.05; margin-bottom: 20px; letter-spacing: -1px;
+  }
+  .hero h1 em { color: var(--red); font-style: normal; }
+  .hero p { color: rgba(255,255,255,0.65); font-size: 16px; line-height: 1.7; margin-bottom: 36px; max-width: 380px; }
+  .hero-ctas { display: flex; gap: 12px; align-items: center; }
+  .btn-primary {
+    background: var(--red); color: white; padding: 14px 28px;
+    border-radius: var(--radius); font-size: 15px; font-weight: 600;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent; color: white; padding: 14px 28px;
+    border: 1.5px solid rgba(255,255,255,0.3); border-radius: var(--radius);
+    font-size: 15px; font-weight: 500; transition: border-color 0.15s, background 0.15s;
+  }
+  .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.06); }
+  .hero-visual {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #2a0a10 0%, #1A1A18 50%, #0f1f0a 100%);
+  }
+  .hero-pattern {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 70% 50%, rgba(200,16,46,0.15) 0%, transparent 60%);
+  }
+  .hero-maple {
+    position: absolute; right: -20px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 280px; opacity: 0.07; line-height: 1;
+    pointer-events: none; user-select: none;
+  }
+  .hero-product-showcase {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  }
+  .product-float {
+    background: rgba(255,255,255,0.05); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg);
+    padding: 20px; text-align: center; color: white;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .product-float-emoji { font-size: 80px; }
+  .product-float-name { font-size: 14px; font-weight: 600; }
+  .product-float-price { font-size: 20px; font-weight: 700; color: var(--red); }
+
+  /* ====== PROMO BANNERS ====== */
+  .promo-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px; padding: 48px 0;
+  }
+  .promo-card {
+    border-radius: var(--radius-lg); overflow: hidden;
+    position: relative; padding: 36px 28px;
+    min-height: 200px; display: flex; flex-direction: column; justify-content: flex-end;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .promo-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .promo-card.wide { grid-column: span 2; }
+  .promo-card-tag {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+    margin-bottom: 8px; opacity: 0.85;
+  }
+  .promo-card h3 { font-family: var(--font-display); font-size: 26px; font-weight: 700; line-height: 1.2; margin-bottom: 12px; }
+  .promo-link {
+    font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .promo-link::after { content: '→'; }
+  .promo-bg-1 { background: linear-gradient(135deg, #1a0408 0%, #3d0c16 100%); color: white; }
+  .promo-bg-2 { background: linear-gradient(135deg, #0f1f0a 0%, #2D5016 100%); color: white; }
+  .promo-bg-3 { background: var(--gold-light); color: var(--black); }
+  .promo-deco { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 90px; opacity: 0.15; pointer-events: none; }
+
+  /* ====== SECTION HEADERS ====== */
+  .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; }
+  .section-header h2 { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1.1; }
+  .section-header h2 span { color: var(--red); }
+  .see-all {
+    font-size: 13px; font-weight: 600; color: var(--red);
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: gap 0.15s;
+  }
+  .see-all:hover { gap: 8px; }
+  .see-all::after { content: '→'; }
+
+  /* ====== AB TASTY BADGE ====== */
+  .abt-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #F0EEFF; border: 1px solid #C4BAF5;
+    color: #4B3FC8; border-radius: 20px; padding: 4px 12px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    margin-bottom: 10px;
+  }
+  .abt-badge .dot { width: 6px; height: 6px; background: #7C6FF0; border-radius: 50%; }
+
+  /* ====== PRODUCT GRID ====== */
+  .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .product-card {
+    cursor: pointer; transition: transform 0.2s;
+  }
+  .product-card:hover { transform: translateY(-4px); }
+  .product-card:hover .product-thumb { box-shadow: var(--shadow-lg); }
+  .product-thumb {
+    background: var(--cream); border-radius: var(--radius-lg);
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 64px; margin-bottom: 14px; position: relative; overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .product-thumb-bg {
+    position: absolute; inset: 0;
+    transition: opacity 0.2s;
+  }
+  .product-badge-sale {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--red); color: white; border-radius: 3px;
+    font-size: 11px; font-weight: 700; padding: 3px 8px; letter-spacing: 0.3px;
+  }
+  .product-badge-new {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--pine); color: white; border-radius: 3px;
+    font-size: 11px; font-weight: 700; padding: 3px 8px; letter-spacing: 0.3px;
+  }
+  .product-info { padding: 0 2px; }
+  .product-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; line-height: 1.3; }
+  .product-sub { font-size: 12px; color: var(--gray); margin-bottom: 8px; }
+  .product-price-row { display: flex; align-items: center; gap: 8px; }
+  .product-price { font-size: 15px; font-weight: 700; }
+  .product-price-old { font-size: 13px; color: var(--gray); text-decoration: line-through; }
+  .product-stars { display: flex; gap: 1px; margin-bottom: 4px; }
+  .star { color: var(--gold); font-size: 12px; }
+  .star.empty { color: var(--gray-light); }
+
+  /* ====== SECTION ====== */
+  .section { padding: 56px 0; }
+  .section.alt { background: var(--cream); }
+
+  /* ====== COLLECTION CARDS ====== */
+  .collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .coll-card {
+    border-radius: var(--radius-lg); overflow: hidden; cursor: pointer;
+    border: 1.5px solid var(--gray-light); transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .coll-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+  .coll-thumb {
+    background: var(--cream); height: 180px;
+    display: flex; align-items: center; justify-content: center; font-size: 72px;
+    position: relative;
+  }
+  .coll-info { padding: 20px; }
+  .coll-info h3 { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .coll-info p { font-size: 13px; color: var(--gray); margin-bottom: 14px; }
+  .coll-count {
+    font-size: 12px; font-weight: 600; color: var(--red);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .coll-count::after { content: '→'; }
+
+  /* ====== FOOTER ====== */
+  footer {
+    background: var(--black); color: rgba(255,255,255,0.6);
+    padding: 48px 0 24px;
+  }
+  .footer-inner {
+    max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px;
+    margin-bottom: 40px;
+  }
+  .footer-brand h4 { font-family: var(--font-display); color: white; font-size: 20px; font-weight: 900; margin-bottom: 12px; }
+  .footer-brand p { font-size: 13px; line-height: 1.7; max-width: 260px; }
+  .footer-col h5 { color: white; font-size: 13px; font-weight: 600; margin-bottom: 14px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .footer-col a { display: block; font-size: 13px; margin-bottom: 8px; transition: color 0.15s; }
+  .footer-col a:hover { color: white; }
+  .footer-bottom {
+    max-width: 1200px; margin: 0 auto; padding: 20px 24px 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-bottom p { font-size: 12px; }
+  .abt-powered {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.5);
+  }
+  .abt-powered strong { color: #7C6FF0; }
+
+  /* ====== PDP ====== */
+  .pdp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; padding: 48px 0; }
+  .pdp-gallery { display: flex; flex-direction: column; gap: 12px; }
+  .pdp-main-img {
+    background: var(--cream); border-radius: var(--radius-lg);
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 140px; position: relative;
+  }
+  .pdp-thumbs { display: flex; gap: 10px; }
+  .pdp-thumb {
+    background: var(--cream); border-radius: var(--radius);
+    width: 72px; height: 72px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s;
+  }
+  .pdp-thumb.active { border-color: var(--red); }
+  .pdp-info h1 { font-family: var(--font-display); font-size: 36px; font-weight: 700; line-height: 1.15; margin-bottom: 10px; }
+  .pdp-meta { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .pdp-price { font-size: 28px; font-weight: 700; color: var(--red); }
+  .pdp-price-old { font-size: 18px; color: var(--gray); text-decoration: line-through; }
+  .pdp-desc { font-size: 15px; color: var(--gray); line-height: 1.8; margin-bottom: 28px; }
+  .pdp-options-label { font-size: 13px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .pdp-sizes { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .size-btn {
+    padding: 8px 16px; border-radius: var(--radius);
+    border: 1.5px solid var(--gray-light); background: white;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.12s;
+  }
+  .size-btn:hover { border-color: var(--black); }
+  .size-btn.active { background: var(--black); color: white; border-color: var(--black); }
+  .size-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+  .pdp-colors { display: flex; gap: 10px; margin-bottom: 28px; }
+  .color-swatch {
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; outline: 2px solid transparent;
+    transition: outline-color 0.15s; position: relative;
+  }
+  .color-swatch.active { outline-color: var(--black); outline-offset: 2px; }
+  .pdp-qty { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .qty-btn {
+    width: 36px; height: 36px; border-radius: var(--radius);
+    border: 1.5px solid var(--gray-light); background: white;
+    font-size: 18px; font-weight: 300; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .qty-btn:hover { background: var(--cream); }
+  .qty-val { font-size: 16px; font-weight: 600; min-width: 24px; text-align: center; }
+  .pdp-add {
+    width: 100%; padding: 16px; background: var(--red); color: white;
+    border-radius: var(--radius); font-size: 16px; font-weight: 600; margin-bottom: 12px;
+    transition: background 0.15s;
+  }
+  .pdp-add:hover { background: var(--red-dark); }
+  .pdp-wishlist {
+    width: 100%; padding: 14px; background: transparent; color: var(--black);
+    border: 1.5px solid var(--gray-light); border-radius: var(--radius);
+    font-size: 15px; font-weight: 500; transition: background 0.15s;
+  }
+  .pdp-wishlist:hover { background: var(--cream); }
+  .pdp-features { margin-top: 28px; border-top: 1px solid var(--gray-light); padding-top: 24px; }
+  .pdp-feature { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-light); font-size: 14px; }
+  .pdp-feature span:first-child { font-size: 18px; }
+
+  /* ====== CHECKOUT ====== */
+  .checkout-grid { display: grid; grid-template-columns: 1fr 420px; gap: 48px; padding: 48px 0; }
+  .checkout-form h2 { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin-bottom: 28px; }
+  .form-section { margin-bottom: 32px; }
+  .form-section h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray); margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--gray-light); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select {
+    padding: 11px 14px; border: 1.5px solid var(--gray-light);
+    border-radius: var(--radius); font-size: 14px; font-family: var(--font-body);
+    background: white; color: var(--black); transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--red); }
+  .order-summary {
+    background: var(--cream); border-radius: var(--radius-lg);
+    padding: 28px; position: sticky; top: calc(var(--nav-h) + 24px);
+    height: fit-content;
+  }
+  .order-summary h3 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+  .order-item { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-light); }
+  .order-item-img { width: 60px; height: 60px; background: white; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+  .order-item-name { font-size: 14px; font-weight: 600; flex: 1; }
+  .order-item-sub { font-size: 12px; color: var(--gray); }
+  .order-item-price { font-size: 14px; font-weight: 700; }
+  .order-totals { margin-top: 16px; }
+  .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; color: var(--gray); }
+  .total-row.grand { border-top: 1.5px solid var(--gray-light); margin-top: 12px; padding-top: 14px; font-size: 18px; font-weight: 700; color: var(--black); }
+  .checkout-btn {
+    width: 100%; padding: 16px; background: var(--red); color: white;
+    border-radius: var(--radius); font-size: 16px; font-weight: 700; margin-top: 20px;
+    cursor: pointer; border: none; transition: background 0.15s;
+    font-family: var(--font-body);
+  }
+  .checkout-btn:hover { background: var(--red-dark); }
+  .secure-badge { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; font-size: 12px; color: var(--gray); }
+
+  /* ====== COLLECTION PAGE ====== */
+  .collection-header {
+    background: var(--black); padding: 60px 0; color: white;
+    text-align: center;
+  }
+  .collection-header h1 { font-family: var(--font-display); font-size: 48px; font-weight: 900; margin-bottom: 12px; }
+  .collection-header p { font-size: 16px; color: rgba(255,255,255,0.6); }
+  .filter-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 20px 0; border-bottom: 1px solid var(--gray-light); margin-bottom: 32px;
+  }
+  .filter-chip {
+    padding: 7px 16px; border-radius: 20px;
+    border: 1.5px solid var(--gray-light); background: white;
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.12s;
+  }
+  .filter-chip:hover { border-color: var(--black); }
+  .filter-chip.active { background: var(--black); color: white; border-color: var(--black); }
+  .filter-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .sort-select {
+    padding: 8px 14px; border: 1.5px solid var(--gray-light); border-radius: var(--radius);
+    font-size: 13px; font-family: var(--font-body); background: white; cursor: pointer;
+  }
+  .results-count { font-size: 13px; color: var(--gray); }
+
+  /* ====== SUCCESS PAGE ====== */
+  .success-page {
+    min-height: calc(100vh - var(--nav-h));
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 60px 24px;
+  }
+  .success-inner { max-width: 500px; }
+  .success-icon { font-size: 80px; margin-bottom: 28px; }
+  .success-inner h1 { font-family: var(--font-display); font-size: 40px; font-weight: 900; margin-bottom: 12px; }
+  .success-inner p { color: var(--gray); margin-bottom: 28px; font-size: 16px; line-height: 1.7; }
+  .order-no { display: inline-block; background: var(--cream); padding: 10px 24px; border-radius: var(--radius); font-weight: 700; font-size: 15px; margin-bottom: 28px; }
+
+  /* ====== RECOMMENDATIONS (AB TASTY) ====== */
+  .recs-section { background: #F0EEFF; padding: 48px 0; }
+  .recs-header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 32px; }
+  .recs-header h2 { font-family: var(--font-display); font-size: 30px; font-weight: 700; }
+  .reco-placeholder { display: flex; align-items: center; gap: 12px; padding: 20px 24px; background: white; border: 1.5px dashed #C4BAF5; border-radius: 10px; color: #5a5380; font-size: 14px; font-weight: 500; }
+  .reco-placeholder::before { content: '⚙️'; font-size: 20px; flex-shrink: 0; }
+
+  /* ====== BREADCRUMB ====== */
+  .breadcrumb { display: flex; align-items: center; gap: 8px; padding: 16px 0; font-size: 13px; color: var(--gray); }
+  .breadcrumb a { transition: color 0.12s; }
+  .breadcrumb a:hover { color: var(--black); }
+  .breadcrumb span { font-weight: 600; color: var(--black); }
+
+  /* ====== MOBILE RESPONSIVE ====== */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-visual { display: none; }
+    .hero h1 { font-size: 40px; }
+    .product-grid { grid-template-columns: repeat(2, 1fr); }
+    .promo-grid { grid-template-columns: 1fr 1fr; }
+    .promo-card.wide { grid-column: span 2; }
+    .collection-grid { grid-template-columns: 1fr 1fr; }
+    .pdp-grid { grid-template-columns: 1fr; }
+    .checkout-grid { grid-template-columns: 1fr; }
+    .footer-inner { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ====== TRANSITIONS ====== */
+  .page-transition { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ====== TRENDING CAROUSEL ====== */
+  .trending-carousel { display: flex; gap: 24px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 4px; }
+  .trending-carousel::-webkit-scrollbar { display: none; }
+  .trending-carousel .product-card { flex: 0 0 calc(25% - 18px); min-width: 0; }
+  .trending-nav { display: flex; gap: 8px; align-items: center; }
+  .trending-nav-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--black); background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; transition: background 0.15s, color 0.15s; }
+  .trending-nav-btn:hover { background: var(--black); color: white; }
+
+  /* ====== SKELETON LOADING ====== */
+  @keyframes shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+  .product-skeleton { background: var(--cream); border-radius: var(--radius-lg); aspect-ratio: 1; animation: shimmer 1.4s ease infinite; }
+  .product-skeleton-info { padding: 12px 0; }
+  .product-skeleton-line { height: 14px; border-radius: 6px; background: #e0ddd5; animation: shimmer 1.4s ease infinite; margin-bottom: 8px; }
+  .product-skeleton-line.short { width: 55%; }
+
+  /* ====== EMAIL GATE ====== */
+  .gate-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(26,26,24,0.72); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .gate-overlay.hidden { display: none; }
+  .gate-modal {
+    background: white; border-radius: var(--radius-lg);
+    padding: 40px; max-width: 460px; width: 100%;
+    box-shadow: 0 24px 80px rgba(26,26,24,0.3); position: relative;
+    animation: modalIn 0.25s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .gate-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--cream); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--gray); transition: background 0.15s; line-height: 1;
+  }
+  .gate-close:hover { background: var(--gray-light); color: var(--black); }
+  .gate-logo { font-size: 36px; margin-bottom: 14px; }
+  .gate-modal h2 { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin-bottom: 8px; line-height: 1.2; }
+  .gate-sub { font-size: 14px; color: var(--gray); line-height: 1.65; margin-bottom: 24px; }
+  .gate-steps-bar { display: flex; gap: 5px; margin-bottom: 20px; }
+  .gate-step-seg { height: 4px; flex: 1; border-radius: 2px; background: var(--gray-light); transition: background 0.2s; }
+  .gate-step-seg.active { background: var(--red); }
+  .gate-step-seg.done { background: var(--pine); }
+  .gate-step-label { font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+  .gate-field { margin-bottom: 4px; }
+  .gate-field label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); margin-bottom: 7px; }
+  .gate-field input {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid var(--gray-light); border-radius: var(--radius);
+    font-size: 15px; font-family: var(--font-body); color: var(--black);
+    transition: border-color 0.15s; background: white;
+  }
+  .gate-field input:focus { outline: none; border-color: var(--red); }
+  .gate-hint  { font-size: 12px; color: var(--gray); margin-top: 8px; line-height: 1.55; }
+  .gate-error { font-size: 12px; color: var(--red); margin-top: 8px; font-weight: 500; }
+  .gate-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .gate-theme-options { display: flex; gap: 12px; margin: 20px 0 4px; }
+  .gate-theme-card {
+    flex: 1; border: 2px solid var(--gray-light); border-radius: 12px;
+    padding: 20px 12px 18px; text-align: center; cursor: pointer;
+    transition: border-color 0.18s, background 0.18s; user-select: none;
+  }
+  .gate-theme-card:hover { border-color: var(--red); }
+  .gate-theme-card.selected { border-color: var(--red); background: #fff5f5; }
+  .gate-theme-card input[type=radio] { display: none; }
+  .gate-theme-card .theme-emoji { font-size: 32px; display: block; margin-bottom: 10px; }
+  .gate-theme-card .theme-name { font-weight: 700; font-size: 15px; color: var(--black); }
+  .gate-btn {
+    flex: 1; padding: 13px 18px; background: var(--red); color: white;
+    border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: var(--font-body); transition: background 0.15s;
+  }
+  .gate-btn:hover { background: var(--red-dark); }
+  .gate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .gate-skip {
+    padding: 13px 18px; background: transparent; color: var(--gray);
+    border: 1.5px solid var(--gray-light); border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font-body);
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .gate-skip:hover { border-color: var(--gray); color: var(--black); }
+
+  /* ====== FOOTER MANAGE LINK ====== */
+  .footer-manage-link {
+    background: none; border: none; padding: 0;
+    color: rgba(255,255,255,0.45); font-size: 11px; font-weight: 500;
+    font-family: var(--font-body); cursor: pointer; letter-spacing: 0.3px;
+    text-decoration: underline; text-underline-offset: 3px; transition: color 0.15s;
+  }
+  .footer-manage-link:hover { color: rgba(255,255,255,0.8); }
+
+  /* ====== CREDENTIALS PANEL ====== */
+  .creds-field { margin-bottom: 18px; }
+  .creds-field label { display: block; font-size: 12px; font-weight: 600; color: var(--black); margin-bottom: 6px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .creds-field input { width: 100%; border: 1.5px solid var(--light-gray); border-radius: var(--radius); padding: 10px 12px; font-size: 14px; font-family: var(--font-body); box-sizing: border-box; transition: border-color 0.15s; }
+  .creds-field input:focus { outline: none; border-color: var(--black); }
+  .creds-field input:disabled { background: #f7f7f5; color: #999; cursor: not-allowed; }
+  .creds-save-btn { width: 100%; padding: 13px; background: var(--black); color: white; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; font-family: var(--font-body); cursor: pointer; margin-bottom: 10px; transition: opacity 0.15s; }
+  .creds-save-btn:hover { opacity: 0.85; }
+  .creds-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .creds-reset-btn { width: 100%; padding: 11px; background: none; border: 1.5px solid #e0d0d0; color: #c0392b; border-radius: var(--radius); font-size: 13px; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; }
+  .creds-reset-btn:hover { background: #fdf0ef; border-color: #c0392b; }
+
+  /* ====== FRANCE THEME ====== */
+  [data-theme="france"] {
+    --red: #002395;
+    --red-dark: #001a6e;
+    --red-light: #e8eaf6;
+    --pine: #EF4135;
+    --pine-light: #fde8e7;
+  }
+  [data-theme="france"] .hero-visual {
+    background: linear-gradient(135deg, #020212 0%, #0a0a2a 50%, #050520 100%);
+  }
+  [data-theme="france"] .hero-pattern {
+    background-image: radial-gradient(circle at 70% 50%, rgba(0,35,149,0.2) 0%, transparent 60%);
+  }
+  [data-theme="france"] .hero-badge {
+    background: rgba(0,35,149,0.2); border-color: rgba(0,35,149,0.45); color: #8aaaff;
+  }
+  [data-theme="france"] .hero h1 em { color: #7a9fff; }
+  [data-theme="france"] .product-float-price { color: #7a9fff; }
+  [data-theme="france"] .promo-bg-1 { background: linear-gradient(135deg, #010116 0%, #001a6e 100%); }
+  [data-theme="france"] .promo-bg-2 { background: linear-gradient(135deg, #1c0002 0%, #b52026 100%); }
+</style>
+</head>
+<body>
+<div id="gate-overlay" class="gate-overlay hidden">
+  <div class="gate-modal" id="gate-modal">
+    <div id="gate-content"></div>
+  </div>
+</div>
+<div id="creds-overlay" class="gate-overlay hidden">
+  <div class="gate-modal" style="max-width:480px">
+    <button class="gate-close" onclick="closeCredentials()" title="Close">✕</button>
+    <div id="creds-content"></div>
+  </div>
+</div>
+<div id="app"></div>
+
+<script>
+// ====== DATA ======
+const PRODUCTS = [
+  { id: 1, name: 'Voyageur Parka', sub: 'Winter Collection', price: 349, oldPrice: 449, emoji: '🧥', color: '#1A1A18', badge: 'sale', rating: 4.8, reviews: 124, category: 'outerwear', desc: 'Engineered for Canadian winters, the Voyageur Parka features 800-fill goose down insulation and a water-resistant shell. Heritage styling meets modern warmth technology.', sizes: ['XS','S','M','L','XL','XXL'], colors: ['#1A1A18','#C8102E','#2D5016'], thumbBg: '#E8E5DC', extras: ['🧥','🧤','🧣'] },
+  { id: 2, name: 'Algonquin Fleece', sub: 'Everyday Essentials', price: 129, emoji: '🦫', color: '#2D5016', badge: 'new', rating: 4.6, reviews: 67, category: 'tops', desc: 'Inspired by the Algonquin wilderness, this 300-weight fleece is crafted from recycled fibres. Exceptional warmth-to-weight ratio for year-round layering.', sizes: ['XS','S','M','L','XL'], colors: ['#2D5016','#6B6B68','#C8102E'], thumbBg: '#EAF0E1', extras: ['🧶','🧤','🎽'] },
+  { id: 3, name: 'Rideau Wool Toque', sub: 'Accessories', price: 68, emoji: '🧢', color: '#C8102E', badge: null, rating: 4.9, reviews: 203, category: 'accessories', desc: 'Hand-knit from 100% merino wool, the Rideau Toque is your cold-weather companion. Features a classic maple leaf intarsia pattern, available in 6 colourways.', sizes: ['One Size'], colors: ['#C8102E','#1A1A18','#F4F1EA'], thumbBg: '#F5E6E9', extras: ['🧢','🧤','🧣'] },
+  { id: 4, name: 'Shield Trail Boot', sub: 'Footwear', price: 229, oldPrice: 279, emoji: '🥾', color: '#C5A028', badge: 'sale', rating: 4.7, reviews: 89, category: 'footwear', desc: 'Waterproof full-grain leather uppers meet aggressive lug soles in the Shield Trail Boot. Rated to -30°C with PrimaLoft® insulation throughout.', sizes: ['7','8','9','10','11','12','13'], colors: ['#C5A028','#1A1A18','#6B6B68'], thumbBg: '#F7EDD0', extras: ['🥾','🧦','👟'] },
+  { id: 5, name: 'Boreal Cargo Pant', sub: 'Bottoms', price: 159, emoji: '👖', color: '#1A1A18', badge: null, rating: 4.5, reviews: 52, category: 'bottoms', desc: 'Technical stretch canvas with DWR coating and deep cargo pockets. The Boreal Cargo Pant transitions from city to wilderness without compromise.', sizes: ['28','30','32','34','36','38'], colors: ['#1A1A18','#C5A028','#2D5016'], thumbBg: '#E8E5DC', extras: ['👖','🧤','🎽'] },
+  { id: 6, name: 'Maple Grove Flannel', sub: 'Tops', price: 95, emoji: '🎽', color: '#C8102E', badge: 'new', rating: 4.7, reviews: 38, category: 'tops', desc: 'Heavyweight 100% organic cotton flannel brushed to perfection. The Maple Grove Flannel is a wardrobe staple built for enduring wear.', sizes: ['XS','S','M','L','XL','XXL'], colors: ['#C8102E','#1A1A18','#2D5016'], thumbBg: '#F5E6E9', extras: ['🎽','🧤','🧥'] },
+  { id: 7, name: 'Tundra Down Vest', sub: 'Outerwear', price: 189, emoji: '🦺', color: '#2D5016', badge: null, rating: 4.4, reviews: 74, category: 'outerwear', desc: 'Lightweight 600-fill down vest with a clean heritage silhouette. The Tundra Vest insulates your core without restricting arm movement.', sizes: ['XS','S','M','L','XL'], colors: ['#2D5016','#1A1A18','#C5A028'], thumbBg: '#EAF0E1', extras: ['🦺','🧥','🎽'] },
+  { id: 8, name: 'Hudson Scarf', sub: 'Accessories', price: 78, emoji: '🧣', color: '#C5A028', badge: null, rating: 5.0, reviews: 47, category: 'accessories', desc: 'A generous 200cm length in heritage tartan wool blend. The Hudson Scarf is as at home at a hockey game as it is at the office.', sizes: ['One Size'], colors: ['#C5A028','#C8102E','#1A1A18'], thumbBg: '#F7EDD0', extras: ['🧣','🧢','🧤'] },
+];
+
+const COLLECTIONS = [
+  { id: 'outerwear', name: 'Outerwear', desc: 'Parkas, vests & shells for every forecast', emoji: '🧥', count: 24, bg: '#1a0408' },
+  { id: 'tops', name: 'Tops & Fleece', desc: 'Flannels, fleeces & everyday favourites', emoji: '🎽', count: 18, bg: '#0f1f0a' },
+  { id: 'bottoms', name: 'Bottoms', desc: 'Technical pants & heritage denim', emoji: '👖', count: 12, bg: '#1f1800' },
+  { id: 'footwear', name: 'Footwear', desc: 'Boots, trail shoes & everyday soles', emoji: '🥾', count: 16, bg: '#0a1a1a' },
+  { id: 'accessories', name: 'Accessories', desc: 'Toques, scarves, mitts & more', emoji: '🧢', count: 30, bg: '#2a0a10' },
+  { id: 'sale', name: 'Maple Deals', desc: 'Up to 40% off select styles', emoji: '🍁', count: 22, bg: '#1a1200' },
+];
+
+// ====== THEME CONTENT ======
+const THEME_CONTENT = {
+  canada: {
+    lang: 'en', storeName: 'True North', storeIcon: '🍁', decorEmoji: '🍁', flagEmoji: '🇨🇦',
+    announcementHTML: '🍁 <strong>Free shipping on orders over $100 CAD</strong> · Use code <strong>TRUENORTH</strong> for 15% off your first order',
+    navHome: 'Home', navShop: 'Shop', navSale: 'Sale 🍁', navStory: 'Our Story', navSearch: 'Search…',
+    heroBadge: '🍁 Made for Canadian Winters',
+    heroH1: 'Gear Built for the <em>True North</em>',
+    heroP: 'Performance outerwear and heritage clothing for adventurers from Newfoundland to Vancouver Island. Built to last. Made with pride.',
+    heroCta1: 'Shop New Arrivals', heroCta2: 'View Sale Items',
+    heroProductName: 'Voyageur Parka', priceTag: p => `$${p} CAD`,
+    promoNewArrivals: 'New Arrivals', promoWinter: 'Winter 2025<br>Collection', promoShopOuterwear: 'Shop Outerwear',
+    promoAccessories: 'Accessories', promoBundleSave: 'Bundle &amp; Save', promoShopAccessories: 'Shop Accessories',
+    promoSaleTag: 'Maple Deals', promoSaleH3: 'Up to 40%<br>Off Sale', promoShopSale: 'Shop Sale',
+    trendingTitle: 'Trending <span>Right Now</span>', viewAll: 'View all products',
+    shopByCategory: 'Shop by <span>Category</span>',
+    collCount: n => `${n} products`, filterResults: n => `${n} results`, sortFeatured: 'Sort: Featured',
+    categoryLabels: { all:'All', outerwear:'Outerwear', tops:'Tops', bottoms:'Bottoms', footwear:'Footwear', accessories:'Accessories', sale:'Sale' },
+    addToCart: (price, qty) => `Add to Cart — $${(price * qty).toLocaleString('en-CA')} CAD`,
+    addToWishlist: '♡ Add to Wishlist', sizeGuide: 'Size Guide',
+    optionColour: 'Colour', optionSize: 'Size', optionQty: 'Quantity',
+    pdpSave: n => `Save $${n}`, pdpNewArrival: 'New Arrival', pdpOnSale: 'On Sale',
+    featureShipping: 'Free shipping on orders over $100 CAD',
+    featureOrigin: '🇨🇦 Designed and tested in Canada',
+    featureReturns: 'Free returns within 60 days', featureSustain: 'Sustainably sourced materials',
+    breadcrumbHome: 'Home',
+    checkoutHeading: 'Checkout', checkoutContact: 'Contact Information', checkoutEmail: 'Email Address',
+    checkoutEmailPh: 'you@example.ca', checkoutShipping: 'Shipping Address',
+    checkoutFirstName: 'First Name', checkoutFirstNamePh: 'Jean-Paul',
+    checkoutLastName: 'Last Name', checkoutLastNamePh: 'Tremblay',
+    checkoutAddress: 'Street Address', checkoutAddressPh: '123 Rideau Street',
+    checkoutCity: 'City', checkoutCityPh: 'Ottawa', checkoutRegion: 'Province',
+    checkoutRegions: ['Ontario','Quebec','British Columbia','Alberta','Manitoba','Saskatchewan','Nova Scotia','New Brunswick','Newfoundland','Prince Edward Island','Northwest Territories','Yukon','Nunavut'],
+    checkoutPostal: 'Postal Code', checkoutPostalPh: 'K1A 0A6',
+    checkoutCountry: 'Country', checkoutCountryOptions: ['Canada 🇨🇦'],
+    checkoutPayment: 'Payment', checkoutCardNum: 'Card Number', checkoutExpiry: 'Expiry Date', checkoutCVV: 'CVV',
+    orderSummary: 'Order Summary', orderSubtotal: 'Subtotal', orderShipping: 'Shipping',
+    orderShippingFree: 'FREE', orderTax: 'HST (13%)', taxRate: 0.13,
+    orderTotalLabel: 'Total CAD', formatTotal: n => `$${n.toFixed(2)}`, orderItemPrice: n => `$${n.toFixed(2)}`,
+    placeOrder: 'Place Order 🍁', secureBadge: '🔒 Secure checkout · SSL encrypted',
+    successIcon: '🍁', successH1: 'Order Confirmed!',
+    successP: 'Thank you for shopping True North. Your order is on its way — crafted with Canadian pride and shipped to your door.',
+    successOrderPrefix: 'TN-',
+    successEmail: 'A confirmation email has been sent to your inbox. Your items will arrive in 3–7 business days.',
+    successContinue: 'Continue Shopping',
+    footerTagline: 'Canadian heritage clothing for adventurers, explorers, and everyday Canadians. Proudly built from coast to coast to coast.',
+    footerShop: 'Shop', footerCompany: 'Company', footerSupport: 'Support',
+    footerShopLinks: ['Outerwear','Tops & Fleece','Footwear','Accessories','Sale 🍁'],
+    footerCompanyLinks: ['Our Story','Sustainability','Careers','Press','Store Finder'],
+    footerSupportLinks: ['FAQ','Shipping Info','Returns','Size Guide','Contact Us'],
+    footerCopyright: '© 2025 True North Outfitters Inc. All rights reserved. 🇨🇦',
+    recoPlaceholder: 'Add your recos IDs inside of your FME account',
+    pdpStaticRecoTitle: 'Complete the <span>Look</span>',
+    cartStaticRecoTitle: "While You're <span>Here…</span>",
+    carouselTitles: { homepage_id: 'Recommended for You', pdp_id: 'You May Also Like', cart_id: 'Complete Your Order' },
+    products: {},
+    collections: {},
+  },
+  france: {
+    lang: 'fr', storeName: 'Atelier Lumière', storeIcon: '⚜️', decorEmoji: '⚜️', flagEmoji: '🇫🇷',
+    announcementHTML: '⚜️ <strong>Livraison gratuite à partir de 100 €</strong> · Code <strong>LUMIERE</strong> pour -15% sur votre première commande',
+    navHome: 'Accueil', navShop: 'Boutique', navSale: 'Soldes ⚜️', navStory: 'Notre Histoire', navSearch: 'Rechercher…',
+    heroBadge: '⚜️ Inspiré des Hivers Parisiens',
+    heroH1: 'La Mode au Cœur de <em>Paris</em>',
+    heroP: "Vêtements de performance et collections patrimoniales pour les aventuriers, de la Seine aux Alpes. Durables. Fabriqués avec fierté.",
+    heroCta1: 'Voir les Nouveautés', heroCta2: 'Voir les Soldes',
+    heroProductName: 'Parka Alpine', priceTag: p => `${p} €`,
+    promoNewArrivals: 'Nouveautés', promoWinter: 'Collection<br>Hiver 2025', promoShopOuterwear: 'Voir les Manteaux',
+    promoAccessories: 'Accessoires', promoBundleSave: 'Lot &amp; Économies', promoShopAccessories: 'Voir les Accessoires',
+    promoSaleTag: 'Bonnes Affaires', promoSaleH3: "Jusqu'à -40%<br>en Soldes", promoShopSale: 'Voir les Soldes',
+    trendingTitle: 'Tendances <span>du Moment</span>', viewAll: 'Voir tous les produits',
+    shopByCategory: 'Acheter par <span>Catégorie</span>',
+    collCount: n => `${n} articles`, filterResults: n => `${n} résultats`, sortFeatured: 'Tri : En vedette',
+    categoryLabels: { all:'Tout', outerwear:'Extérieur', tops:'Hauts', bottoms:'Bas', footwear:'Chaussures', accessories:'Accessoires', sale:'Soldes' },
+    addToCart: (price, qty) => `Ajouter au Panier — ${(price * qty).toLocaleString('fr-FR')} €`,
+    addToWishlist: '♡ Ajouter aux Favoris', sizeGuide: 'Guide des Tailles',
+    optionColour: 'Couleur', optionSize: 'Taille', optionQty: 'Quantité',
+    pdpSave: n => `Économisez ${n} €`, pdpNewArrival: 'Nouvelle Arrivée', pdpOnSale: 'En Solde',
+    featureShipping: 'Livraison gratuite à partir de 100 €',
+    featureOrigin: '🇫🇷 Conçu et testé en France',
+    featureReturns: 'Retours gratuits sous 60 jours', featureSustain: "Matériaux d'approvisionnement durable",
+    breadcrumbHome: 'Accueil',
+    checkoutHeading: 'Paiement', checkoutContact: 'Coordonnées', checkoutEmail: 'Adresse E-mail',
+    checkoutEmailPh: 'vous@exemple.fr', checkoutShipping: 'Adresse de Livraison',
+    checkoutFirstName: 'Prénom', checkoutFirstNamePh: 'Jean-Pierre',
+    checkoutLastName: 'Nom de Famille', checkoutLastNamePh: 'Dubois',
+    checkoutAddress: 'Adresse', checkoutAddressPh: '12 Rue de Rivoli',
+    checkoutCity: 'Ville', checkoutCityPh: 'Paris', checkoutRegion: 'Région',
+    checkoutRegions: ['Île-de-France','Auvergne-Rhône-Alpes','Nouvelle-Aquitaine','Occitanie','Hauts-de-France','Grand Est','Pays de la Loire','Bretagne','Normandie','Bourgogne-Franche-Comté','Centre-Val de Loire',"Provence-Alpes-Côte d'Azur",'Corse'],
+    checkoutPostal: 'Code Postal', checkoutPostalPh: '75001',
+    checkoutCountry: 'Pays', checkoutCountryOptions: ['France 🇫🇷'],
+    checkoutPayment: 'Paiement', checkoutCardNum: 'Numéro de Carte', checkoutExpiry: "Date d'Expiration", checkoutCVV: 'CVV',
+    orderSummary: 'Récapitulatif de Commande', orderSubtotal: 'Sous-total', orderShipping: 'Livraison',
+    orderShippingFree: 'GRATUIT', orderTax: 'TVA (20%)', taxRate: 0.20,
+    orderTotalLabel: 'Total EUR', formatTotal: n => `${n.toFixed(2)} €`, orderItemPrice: n => `${n.toFixed(2)} €`,
+    placeOrder: 'Passer la Commande ⚜️', secureBadge: '🔒 Paiement sécurisé · Chiffrement SSL',
+    successIcon: '⚜️', successH1: 'Commande Confirmée !',
+    successP: "Merci d'avoir choisi Atelier Lumière. Votre commande est en route — façonnée avec art français et livrée à votre porte.",
+    successOrderPrefix: 'AL-',
+    successEmail: 'Un e-mail de confirmation vous a été envoyé. Vos articles arriveront dans 3 à 7 jours ouvrables.',
+    successContinue: 'Continuer mes Achats',
+    footerTagline: "Mode et élégance parisienne pour les aventuriers des quatre coins de France. Façonné avec art, porté avec fierté.",
+    footerShop: 'Boutique', footerCompany: 'Entreprise', footerSupport: 'Assistance',
+    footerShopLinks: ["Vêtements d'Extérieur",'Hauts & Polaires','Chaussures','Accessoires','Soldes ⚜️'],
+    footerCompanyLinks: ['Notre Histoire','Développement Durable','Carrières','Presse','Trouver un Magasin'],
+    footerSupportLinks: ['FAQ','Infos de Livraison','Retours','Guide des Tailles','Contactez-nous'],
+    footerCopyright: '© 2025 Atelier Lumière S.A.S. Tous droits réservés. 🇫🇷',
+    recoPlaceholder: 'Ajoutez vos IDs de recos dans votre compte FME',
+    pdpStaticRecoTitle: 'Complétez le <span>Look</span>',
+    cartStaticRecoTitle: 'Pendant que Vous <span>Êtes Là…</span>',
+    carouselTitles: { homepage_id: 'Recommandé pour Vous', pdp_id: 'Vous Aimerez Aussi', cart_id: 'Complétez Votre Commande' },
+    products: {
+      1: { name: 'Parka Alpine', sub: 'Collection Hiver', desc: "Conçue pour les hivers alpins, la Parka Alpine est dotée d'une isolation en duvet d'oie 800 g/cm² et d'une coque imperméable. Un style Atelier Lumière allié à la technologie moderne de la chaleur." },
+      2: { name: 'Polaire Gauloise', sub: 'Essentiels du Quotidien', emoji: '🐓', desc: "Inspirée du terroir français, cette polaire 300 g/m² est confectionnée en fibres recyclées. Un rapport chaleur/poids exceptionnel pour les superpositions toute l'année." },
+      3: { name: 'Béret Basque', sub: 'Accessoires', desc: "Tricoté à la main en laine mérinos 100%, le Béret Basque est votre compagnon par temps froid. Il arbore un motif jacquard classique à fleur de lys, disponible en 6 coloris." },
+      4: { name: 'Botte Mont-Blanc', sub: 'Chaussures', desc: "Des empeignes en cuir pleine fleur imperméables associées à des semelles crantées agressives. La Botte Mont-Blanc est homologuée jusqu'à -30°C avec isolation PrimaLoft® intégrale." },
+      5: { name: 'Pantalon Cargo Alpin', sub: 'Bas', desc: "Toile stretch technique avec revêtement DWR et poches cargo profondes. Le Pantalon Cargo Alpin passe de Paris à la montagne sans compromis." },
+      6: { name: 'Flanelle Provençale', sub: 'Hauts', desc: "Flanelle 100% coton biologique brossé à la perfection. La Flanelle Provençale est une pièce intemporelle aux couleurs du Midi, conçue pour durer." },
+      7: { name: 'Doudoune Chamonix', sub: "Vêtements d'Extérieur", desc: "Doudoune légère 600 g avec une silhouette épurée signée Atelier Lumière. Isole votre torse sans restreindre les mouvements des bras." },
+      8: { name: 'Foulard de Soie', sub: 'Accessoires', desc: "Un généreux 200 cm de soie tissée dans les ateliers de Lyon. Le Foulard de Soie Atelier Lumière est aussi à l'aise lors d'un dîner parisien qu'en promenade." },
+    },
+    collections: {
+      outerwear: { name: "Vêtements d'Extérieur", desc: 'Parkas, doudounes & coques pour tous les temps', bg: '#030320' },
+      tops: { name: 'Hauts & Polaires', desc: 'Flannelles, polaires & favoris du quotidien', bg: '#200a0a' },
+      bottoms: { name: 'Bas', desc: 'Pantalons techniques & denim patrimonial', bg: '#1a1500' },
+      footwear: { name: 'Chaussures', desc: 'Bottes, chaussures de randonnée & semelles du quotidien', bg: '#0a1a1a' },
+      accessories: { name: 'Accessoires', desc: 'Bonnets, écharpes, moufles & plus', bg: '#1a0820' },
+      sale: { name: 'Soldes ⚜️', desc: "Jusqu'à -40% sur des styles sélectionnés", bg: '#120800' },
+    },
+  },
+};
+
+let currentTheme = 'canada';
+
+function applyTheme(theme) {
+  if (!theme || !THEME_CONTENT[theme]) return;
+  currentTheme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  document.title = `${THEME_CONTENT[theme].storeName} — Powered by AB Tasty Commerce`;
+}
+
+// ====== SITE CONFIG (populated by boot) ======
+let siteConfig = {};
+
+// ====== STATE ======
+let state = {
+  page: 'home',
+  currentProduct: null,
+  currentCollection: null,
+  cart: [
+    { product: PRODUCTS[0], size: 'M', color: '#1A1A18', qty: 1 },
+    { product: PRODUCTS[2], size: 'One Size', color: '#C8102E', qty: 2 },
+  ],
+  selectedSize: null,
+  selectedColor: null,
+  qty: 1,
+  orderPlaced: false,
+  filterActive: 'all',
+};
+
+// ====== AB TASTY RECOMMENDATIONS ======
+let ABTASTY_RECO_URL = 'https://uc-info.eu.abtasty.com/v1/reco/1120/recos/2de4a962-5c54-4129-9fe7-28edd06a2141';
+let ABTASTY_RECO_TOKEN = '';
+const ABTASTY_FIELDS = JSON.stringify(['img_link', 'id', 'price', 'name']);
+
+// Generic skeleton-loading reco carousel — tries the API if recoUrl is provided, falls back to static products
+async function fetchRecoGrid(gridId, excludeId, recoUrl) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  try {
+    if (recoUrl) {
+      const res = await fetch(
+        `${recoUrl}?fields=${encodeURIComponent(ABTASTY_FIELDS)}`,
+        { headers: { authorization: ABTASTY_RECO_TOKEN } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.items && data.items.length) {
+          grid.innerHTML = data.items.map(p => buildApiProductCard(p)).join('');
+          return;
+        }
+      }
+    }
+  } catch(e) {}
+  // Fallback: static products, excluding current item
+  const fallback = PRODUCTS.filter(p => p.id !== excludeId).slice(0, 4);
+  grid.innerHTML = fallback.map(p => buildProductCard(p)).join('');
+}
+
+function fetchTrendingProducts() { return fetchRecoGrid('trending-grid', undefined, ABTASTY_RECO_URL); }
+
+function getCarouselTitle(key) {
+  return (THEME_CONTENT[currentTheme]?.carouselTitles?.[key]) || 'Recommendations';
+}
+
+// Evaluates the recommendations flag and renders the carousel for `variableKey`.
+// When the SDK is ready, always replaces the static section (staticId) with the flagged one.
+// Shows a setup prompt if the flag isn't enabled yet or the variable is still "none".
+async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, staticId) {
+  const section = document.getElementById(sectionId);
+  if (!section || !vwoClientSide) return;
+
+  if (staticId) {
+    const staticSec = document.getElementById(staticId);
+    if (staticSec) staticSec.style.display = 'none';
+  }
+  section.querySelector('[data-reco-title]').textContent = getCarouselTitle(variableKey);
+  section.querySelector('[data-reco-badge]').textContent = 'AB Tasty Commerce — Recommendations';
+  section.style.display = '';
+
+  const showPlaceholder = () => {
+    section.querySelector('[data-reco-grid]').style.display = 'none';
+    section.querySelector('[data-reco-placeholder]').style.display = 'flex';
+  };
+
+  try {
+    const flag = await vwoClientSide.getFlag('recommendations', { id: siteConfig.visitorId || 'anonymous' });
+    const isEnabled = flag.isEnabled();
+    const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
+    if (recoModelId === 'none') { showPlaceholder(); return; }
+    const siteId = siteConfig.recoId || '1120';
+    fetchRecoGrid(gridId, excludeId, `https://uc-info.eu.abtasty.com/v1/reco/${siteId}/recos/${recoModelId}`);
+  } catch(e) { showPlaceholder(); }
+}
+
+function buildSkeletonCard() {
+  return `
+  <div class="product-card">
+    <div class="product-skeleton"></div>
+    <div class="product-skeleton-info">
+      <div class="product-skeleton-line"></div>
+      <div class="product-skeleton-line short"></div>
+    </div>
+  </div>`;
+}
+
+function buildFlaggedRecoSection(sectionId, gridId) {
+  const T = THEME_CONTENT[currentTheme];
+  return `
+  <div class="recs-section" id="${sectionId}" style="display:none">
+    <div class="container">
+      <div class="recs-header">
+        <div class="abt-badge"><span class="dot"></span> <span data-reco-badge>AB Tasty Commerce</span></div>
+        <h2 data-reco-title>Recommendations</h2>
+      </div>
+      <div class="reco-placeholder" data-reco-placeholder style="display:none">${T.recoPlaceholder}</div>
+      <div class="trending-carousel" data-reco-grid id="${gridId}">
+        ${Array.from({length: 4}, buildSkeletonCard).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildApiProductCard(p) {
+  const T = THEME_CONTENT[currentTheme];
+  return `
+  <div class="product-card">
+    <div class="product-thumb" style="background:#f0ede6;overflow:hidden;padding:0">
+      <img src="${p.img_link}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover">
+    </div>
+    <div class="product-info">
+      <div class="product-name">${p.name}</div>
+      <div class="product-price-row">
+        <span class="product-price">${T.priceTag(p.price)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ====== RECOS TAG ======
+function loadRecosTag(siteId) {
+  // Remove any previously loaded recos tag before adding the new one
+  document.querySelectorAll('script[src*="get-potions.com"]').forEach(s => s.remove());
+  const script = document.createElement('script');
+  script.src = `https://client.get-potions.com/${siteId}/recos-tag.js`;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+// ====== VWO CLIENT-SIDE SDK ======
+let vwoClientSide = null;
+
+async function initVwoClientSide(accountId, sdkKey) {
+  return new Promise(resolve => {
+    const doInit = () => {
+      window.vwoSdk.init({ accountId: String(accountId), sdkKey: String(sdkKey), logger: { level: 'ERROR' } })
+        .then(client => { vwoClientSide = client; resolve(client); })
+        .catch(() => resolve(null));
+    };
+    if (window.vwoSdk) { doInit(); return; }
+    const s = document.createElement('script');
+    s.src = '/vwo-sdk.js';
+    s.onload = doInit;
+    s.onerror = () => resolve(null);
+    document.head.appendChild(s);
+  });
+}
+
+// ====== GATE ======
+const gateState = { step: 'email', email: '', emailError: null, theme: '', themeError: null, accountId: '', sdkKey: '', apiKey: '', recoId: '', recoToken: '' };
+
+function showGate() {
+  const overlay = document.getElementById('gate-overlay');
+  overlay.classList.remove('hidden');
+  gateState.step = 'email';
+  gateState.emailError = null;
+  renderGateStep();
+}
+
+function hideGate() {
+  document.getElementById('gate-overlay').classList.add('hidden');
+}
+
+function selectTheme(value) {
+  gateState.theme = value;
+  gateState.themeError = null;
+  document.querySelectorAll('.gate-theme-card').forEach(el => {
+    const input = el.querySelector('input[type=radio]');
+    el.classList.toggle('selected', input && input.value === value);
+  });
+  fetch('/api/check-theme', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usertheme: value }),
+  })
+    .then(r => r.json())
+    .then(data => console.log('[VWO] demoTheme flag → enabled:', data.isEnabled, '| theme:', data.theme))
+    .catch(e  => console.warn('[VWO] check-theme failed:', e.message));
+}
+
+function renderGateStep() {
+  document.getElementById('gate-content').innerHTML = buildGateHTML();
+  const nb = document.getElementById('gate-next-btn');
+  if (nb) nb.onclick = handleGateNext;
+  const sb = document.getElementById('gate-skip-btn');
+  if (sb) sb.onclick = hideGate;
+  const inp = document.querySelector('#gate-content input');
+  if (inp) {
+    inp.focus();
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleGateNext(); });
+  }
+}
+
+function buildGateHTML() {
+  if (gateState.step === 'email') {
+    return `
+      <div class="gate-logo">🚀</div>
+      <h2>FEM and Commerce Demo</h2>
+      <p class="gate-sub">Enter your email address to verify access to this demo.</p>
+      <div class="gate-field">
+        <label>Email Address</label>
+        <input id="gate-email" type="email" placeholder="you@yourcompany.com"
+          value="${gateState.email}" autocomplete="email"
+          ${gateState.emailError ? 'style="border-color:var(--red)"' : ''}>
+        ${gateState.emailError ? `<div class="gate-error">${gateState.emailError}</div>` : ''}
+      </div>
+      <div class="gate-actions">
+        <button class="gate-btn" id="gate-next-btn">Continue →</button>
+      </div>`;
+  }
+
+  if (gateState.step === 'theme') {
+    return `
+      <div class="gate-logo">🎨</div>
+      <h2>Select Theme</h2>
+      <p class="gate-sub">Choose the experience theme for this demo.</p>
+      <div class="gate-theme-options">
+        <label class="gate-theme-card${gateState.theme === 'canada' ? ' selected' : ''}" onclick="selectTheme('canada')">
+          <input type="radio" name="theme" value="canada" ${gateState.theme === 'canada' ? 'checked' : ''}>
+          <span class="theme-emoji">🍁</span>
+          <span class="theme-name">Canadian</span>
+        </label>
+        <label class="gate-theme-card${gateState.theme === 'france' ? ' selected' : ''}" onclick="selectTheme('france')">
+          <input type="radio" name="theme" value="france" ${gateState.theme === 'france' ? 'checked' : ''}>
+          <span class="theme-emoji">🇫🇷</span>
+          <span class="theme-name">French</span>
+        </label>
+      </div>
+      ${gateState.themeError ? `<div class="gate-error">${gateState.themeError}</div>` : ''}
+      <div class="gate-actions">
+        <button class="gate-btn" id="gate-next-btn">Next →</button>
+      </div>`;
+  }
+
+  const steps = [
+    { key: 'account-id', num: 1,
+      title: 'VWO Account ID',
+      hint: 'Your numeric VWO Account ID from the VWO dashboard (Settings → Account). Used to initialise the client-side Feature Experimentation SDK.',
+      inputId: 'gate-account-id', type: 'number', placeholder: 'e.g. 123456',
+      value: gateState.accountId },
+    { key: 'sdk-key', num: 2,
+      title: 'Feature Experimentation SDK Key',
+      hint: 'Your environment SDK key from the VWO dashboard. This initialises the VWO client-side SDK on this demo site with your own account.',
+      inputId: 'gate-sdk-key', type: 'text', placeholder: 'e.g. a1b2c3d4e5f6…',
+      value: gateState.sdkKey },
+    { key: 'api-key', num: 3,
+      title: 'VWO API Key',
+      hint: 'Your VWO API token from app.vwo.com/#/developers/tokens. Used server-side to provision the Recommendations feature flag in your account automatically.',
+      inputId: 'gate-api-key', type: 'password', placeholder: '••••••••••••••••',
+      value: gateState.apiKey },
+    { key: 'reco-id', num: 4,
+      title: 'AB Tasty Commerce Site ID',
+      hint: 'Your AB Tasty Commerce site ID. This is injected into the recommendations tag loaded in the page head and used to power the product carousels with your catalogue.',
+      inputId: 'gate-reco-id', type: 'text', placeholder: 'e.g. 1120',
+      value: gateState.recoId },
+    { key: 'reco-token', num: 5,
+      title: 'AB Tasty Commerce API Key',
+      hint: 'Your AB Tasty Commerce API key. Used to authenticate product recommendation requests on the homepage, product page, and cart.',
+      inputId: 'gate-reco-token', type: 'password', placeholder: '••••••••••••••••',
+      value: gateState.recoToken },
+  ];
+
+  const s = steps.find(x => x.key === gateState.step);
+  const dots = steps.map(x =>
+    `<div class="gate-step-seg ${x.num < s.num ? 'done' : x.num === s.num ? 'active' : ''}"></div>`
+  ).join('');
+  const isLast = s.num === steps.length;
+
+  return `
+    <div class="gate-steps-bar">${dots}</div>
+    <div class="gate-step-label">Step ${s.num} of ${steps.length}</div>
+    <h2>${s.title}</h2>
+    <div class="gate-field">
+      <input id="${s.inputId}" type="${s.type}" placeholder="${s.placeholder}" value="${s.value}" autocomplete="off">
+      <div class="gate-hint">${s.hint}</div>
+    </div>
+    <div class="gate-actions">
+      <button class="gate-btn" id="gate-next-btn">${isLast ? 'Save &amp; Launch 🍁' : 'Next →'}</button>
+    </div>`;
+}
+
+async function handleGateNext() {
+  const step = gateState.step;
+
+  if (step === 'email') {
+    const el = document.getElementById('gate-email');
+    const val = el.value.trim();
+    if (!val || !val.includes('@')) { el.style.borderColor = 'var(--red)'; return; }
+    const btn = document.getElementById('gate-next-btn');
+    btn.disabled = true; btn.textContent = 'Checking…';
+    try {
+      const r    = await fetch('/api/verify-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: val }),
+      });
+      const data = await r.json();
+      if (data.approved) {
+        gateState.email      = val;
+        gateState.emailError = null;
+        gateState.step       = 'theme';
+        renderGateStep();
+      } else {
+        gateState.email      = val;
+        gateState.emailError = 'This email is not authorised. Please contact your VWO representative.';
+        renderGateStep();
+      }
+    } catch(e) {
+      btn.disabled = false; btn.textContent = 'Continue →';
+    }
+
+  } else if (step === 'theme') {
+    if (!gateState.theme) {
+      gateState.themeError = 'Please select a theme to continue.';
+      renderGateStep();
+      return;
+    }
+    gateState.themeError = null;
+    gateState.step = 'account-id';
+    renderGateStep();
+
+  } else if (step === 'account-id') {
+    const el = document.getElementById('gate-account-id');
+    const val = el.value.trim();
+    if (!val) { el.style.borderColor = 'var(--red)'; return; }
+    gateState.accountId = val;
+    gateState.step = 'sdk-key';
+    renderGateStep();
+
+  } else if (step === 'sdk-key') {
+    const el = document.getElementById('gate-sdk-key');
+    const val = el.value.trim();
+    if (!val) { el.style.borderColor = 'var(--red)'; return; }
+    gateState.sdkKey = val;
+    gateState.step = 'api-key';
+    renderGateStep();
+
+  } else if (step === 'api-key') {
+    const el = document.getElementById('gate-api-key');
+    const val = el.value.trim();
+    if (!val) { el.style.borderColor = 'var(--red)'; return; }
+    gateState.apiKey = val;
+    gateState.step = 'reco-id';
+    renderGateStep();
+
+  } else if (step === 'reco-id') {
+    const el = document.getElementById('gate-reco-id');
+    const val = el.value.trim();
+    if (!val) { el.style.borderColor = 'var(--red)'; return; }
+    gateState.recoId = val;
+    gateState.step = 'reco-token';
+    renderGateStep();
+
+  } else if (step === 'reco-token') {
+    const el = document.getElementById('gate-reco-token');
+    const val = el.value.trim();
+    if (!val) { el.style.borderColor = 'var(--red)'; return; }
+    gateState.recoToken = val;
+    const btn = document.getElementById('gate-next-btn');
+    btn.disabled = true; btn.textContent = 'Verifying…';
+    try {
+      const vr = await fetch('/api/verify-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: gateState.email }),
+      });
+      const vdata = await vr.json();
+      if (!vdata.approved) {
+        gateState.emailError = 'Access verification failed. Please re-enter your email.';
+        gateState.step = 'email';
+        renderGateStep();
+        return;
+      }
+      btn.textContent = 'Saving…';
+      const r = await fetch('/api/credentials', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: gateState.email, accountId: gateState.accountId, sdkKey: gateState.sdkKey, apiKey: gateState.apiKey, recoId: gateState.recoId, recoToken: gateState.recoToken, theme: gateState.theme }),
+      });
+      if (r.ok) {
+        btn.textContent = 'Setting up flags…';
+        try {
+          await fetch('/api/setup-flags', { method: 'POST' });
+        } catch(e) {}
+        btn.textContent = 'Launching…';
+        siteConfig.hasCredentials = true;
+        siteConfig.email          = gateState.email;
+        siteConfig.accountId      = gateState.accountId;
+        siteConfig.sdkKey         = gateState.sdkKey;
+        siteConfig.apiKey         = gateState.apiKey;
+        siteConfig.recoId         = gateState.recoId;
+        siteConfig.recoToken      = gateState.recoToken;
+        siteConfig.theme          = gateState.theme;
+        applyTheme(gateState.theme || 'canada');
+        loadRecosTag(gateState.recoId);
+        ABTASTY_RECO_URL = `https://uc-info.eu.abtasty.com/v1/reco/${gateState.recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
+        ABTASTY_RECO_TOKEN = gateState.recoToken;
+        hideGate();
+        render();
+        return;
+      }
+    } catch(e) {}
+    btn.disabled = false; btn.textContent = 'Save & Launch 🍁';
+  }
+}
+
+function openCredentials() {
+  const overlay = document.getElementById('creds-overlay');
+  overlay.classList.remove('hidden');
+  overlay.onclick = e => { if (e.target === overlay) closeCredentials(); };
+  const t = siteConfig.theme || '';
+  document.getElementById('creds-content').innerHTML = `
+    <h2 style="margin-bottom:6px">Manage Credentials</h2>
+    <p class="gate-sub" style="margin-bottom:24px">Changes take effect immediately after saving.</p>
+    <div class="creds-field">
+      <label>Theme</label>
+      <div class="gate-theme-options" style="margin-top:8px">
+        <label class="gate-theme-card${t === 'canada' ? ' selected' : ''}" onclick="selectCredsTheme('canada')">
+          <input type="radio" name="creds-theme" value="canada" ${t === 'canada' ? 'checked' : ''}>
+          <span class="theme-emoji">🍁</span>
+          <span class="theme-name">Canadian</span>
+        </label>
+        <label class="gate-theme-card${t === 'france' ? ' selected' : ''}" onclick="selectCredsTheme('france')">
+          <input type="radio" name="creds-theme" value="france" ${t === 'france' ? 'checked' : ''}>
+          <span class="theme-emoji">🇫🇷</span>
+          <span class="theme-name">French</span>
+        </label>
+      </div>
+    </div>
+    <div class="creds-field">
+      <label>VWO Account ID</label>
+      <input id="cred-account-id" type="text" value="${siteConfig.accountId || ''}" autocomplete="off">
+    </div>
+    <div class="creds-field">
+      <label>Feature Experimentation SDK Key</label>
+      <input id="cred-sdk-key" type="text" value="${siteConfig.sdkKey || ''}" autocomplete="off">
+    </div>
+    <div class="creds-field">
+      <label>VWO Authorization Key</label>
+      <input id="cred-api-key" type="password" value="${siteConfig.apiKey || ''}" autocomplete="off">
+    </div>
+    <div class="creds-field">
+      <label>AB Tasty Commerce Site ID</label>
+      <input id="cred-reco-id" type="text" value="${siteConfig.recoId || ''}" autocomplete="off">
+    </div>
+    <div class="creds-field">
+      <label>AB Tasty Commerce API Key</label>
+      <input id="cred-reco-token" type="password" value="${siteConfig.recoToken || ''}" autocomplete="off">
+    </div>
+    <button class="creds-save-btn" id="creds-save-btn" onclick="saveCredentials()">Save Changes</button>
+    <button class="creds-reset-btn" onclick="resetCredentials()">Reset All Credentials</button>
+  `;
+}
+
+function selectCredsTheme(value) {
+  document.querySelectorAll('#creds-content .gate-theme-card').forEach(el => {
+    const input = el.querySelector('input[type=radio]');
+    el.classList.toggle('selected', input && input.value === value);
+  });
+}
+
+function closeCredentials() {
+  document.getElementById('creds-overlay').classList.add('hidden');
+}
+
+async function saveCredentials() {
+  const btn = document.getElementById('creds-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const selectedTheme = document.querySelector('#creds-content input[name="creds-theme"]:checked')?.value || siteConfig.theme || '';
+  const accountId = document.getElementById('cred-account-id').value.trim();
+  const sdkKey    = document.getElementById('cred-sdk-key').value.trim();
+  const apiKey    = document.getElementById('cred-api-key').value.trim();
+  const recoId    = document.getElementById('cred-reco-id').value.trim();
+  const recoToken = document.getElementById('cred-reco-token').value.trim();
+  try {
+    const r = await fetch('/api/credentials', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: siteConfig.email || '', accountId, sdkKey, apiKey: apiKey || undefined, recoId, recoToken, theme: selectedTheme || undefined }),
+    });
+    if (r.ok) {
+      siteConfig.accountId = accountId;
+      siteConfig.sdkKey    = sdkKey;
+      if (apiKey) siteConfig.apiKey = apiKey;
+      siteConfig.recoId    = recoId;
+      siteConfig.recoToken = recoToken;
+      if (selectedTheme) {
+        siteConfig.theme = selectedTheme;
+        applyTheme(selectedTheme);
+        fetch('/api/check-theme', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usertheme: selectedTheme }),
+        })
+          .then(r => r.json())
+          .then(data => console.log('[VWO] demoTheme flag → enabled:', data.isEnabled, '| theme:', data.theme))
+          .catch(e  => console.warn('[VWO] check-theme failed:', e.message));
+      }
+      ABTASTY_RECO_URL   = `https://uc-info.eu.abtasty.com/v1/reco/${recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
+      ABTASTY_RECO_TOKEN = recoToken;
+      loadRecosTag(recoId);
+      closeCredentials();
+      render();
+      return;
+    }
+  } catch(e) {}
+  btn.disabled = false; btn.textContent = 'Save Changes';
+}
+
+async function resetCredentials() {
+  if (!confirm('Reset all credentials? You\'ll be prompted to re-enter them on the next page load.')) return;
+  await fetch('/api/credentials', { method: 'DELETE' });
+  window.location.reload();
+}
+
+// ====== RENDER ENGINE ======
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  const wrapper = document.createElement('div');
+  wrapper.className = 'page page-transition';
+  wrapper.innerHTML = buildPage();
+  app.appendChild(wrapper);
+  bindEvents();
+  if (state.page === 'home') fetchTrendingProducts();
+  if (state.page === 'pdp')  fetchRecoGrid('pdp-reco-grid', state.currentProduct?.id);
+  if (state.page === 'checkout') fetchRecoGrid('checkout-reco-grid');
+  loadFlaggedRecos();
+}
+
+// Re-initialises the VWO client on every render so flag variables are always fresh.
+async function loadFlaggedRecos() {
+  if (!siteConfig.hasCredentials) return;
+  await initVwoClientSide(siteConfig.accountId, siteConfig.sdkKey);
+  if (state.page === 'home') {
+    fetchFlaggedReco('homepage_id', 'flag-reco-home', 'flag-grid-home', undefined, 'trending-section');
+  }
+  if (state.page === 'pdp') {
+    fetchFlaggedReco('pdp_id', 'flag-reco-pdp', 'flag-grid-pdp', state.currentProduct?.id, 'pdp-reco-section');
+  }
+  if (state.page === 'checkout') {
+    fetchFlaggedReco('cart_id', 'flag-reco-cart', 'flag-grid-cart', undefined, 'checkout-reco-section');
+  }
+}
+
+function navigate(page, data = {}) {
+  state.page = page;
+  if (data.product) { state.currentProduct = data.product; state.selectedSize = null; state.selectedColor = data.product.colors[0]; state.qty = 1; }
+  if (data.collection) state.currentCollection = data.collection;
+  window.scrollTo(0, 0);
+  render();
+}
+
+function buildPage() {
+  const nav = buildNav();
+  let content = '';
+  if (state.page === 'home') content = buildHome();
+  else if (state.page === 'collection') content = buildCollectionPage();
+  else if (state.page === 'pdp') content = buildPDP();
+  else if (state.page === 'checkout') content = buildCheckout();
+  else if (state.page === 'success') content = buildSuccess();
+  const footer = buildFooter();
+  return nav + content + footer;
+}
+
+// ====== NAV ======
+function buildNav() {
+  const T = THEME_CONTENT[currentTheme];
+  const cartCount = state.cart.reduce((sum, i) => sum + i.qty, 0);
+  return `
+  <div class="announcement">${T.announcementHTML}</div>
+  <nav>
+    <div class="nav-inner">
+      <div class="nav-logo" onclick="navigate('home')" style="cursor:pointer">
+        <span class="leaf">${T.storeIcon}</span> ${T.storeName}
+      </div>
+      <div class="nav-links">
+        <a href="#" class="${state.page==='home'?'active':''}" onclick="navigate('home');return false">${T.navHome}</a>
+        <a href="#" onclick="navigate('collection',{collection:COLLECTIONS[0]});return false">${T.navShop}</a>
+        <a href="#" onclick="navigate('collection',{collection:COLLECTIONS[5]});return false">${T.navSale}</a>
+        <a href="#" onclick="alert('AB Tasty Commerce powers our story personalization!');return false">${T.navStory}</a>
+      </div>
+      <div class="nav-right">
+        <div class="nav-search"><span>🔍</span> ${T.navSearch}</div>
+        <button class="nav-icon" onclick="alert('${T.addToWishlist} — powered by AB Tasty Commerce recommendations!')">♡</button>
+        <button class="nav-icon cart-badge" onclick="navigate('checkout')">
+          🛒
+          ${cartCount > 0 ? `<span class="badge">${cartCount}</span>` : ''}
+        </button>
+      </div>
+    </div>
+  </nav>`;
+}
+
+// ====== HOME ======
+function buildHome() {
+  const T = THEME_CONTENT[currentTheme];
+  return `
+  ${buildHero()}
+  <div class="section">
+    <div class="container">
+      <div class="promo-grid">
+        <div class="promo-card promo-bg-1 wide" onclick="navigate('collection',{collection:COLLECTIONS[0]})">
+          <div class="promo-deco">🧥</div>
+          <div class="promo-card-tag">${T.promoNewArrivals}</div>
+          <h3>${T.promoWinter}</h3>
+          <a class="promo-link">${T.promoShopOuterwear}</a>
+        </div>
+        <div class="promo-card promo-bg-2" onclick="navigate('collection',{collection:COLLECTIONS[4]})">
+          <div class="promo-deco">🧢</div>
+          <div class="promo-card-tag">${T.promoAccessories}</div>
+          <h3>${T.promoBundleSave}</h3>
+          <a class="promo-link">${T.promoShopAccessories}</a>
+        </div>
+        <div class="promo-card promo-bg-3" onclick="navigate('collection',{collection:COLLECTIONS[5]})">
+          <div class="promo-deco">${T.decorEmoji}</div>
+          <div class="promo-card-tag" style="color:#C5A028">${T.promoSaleTag}</div>
+          <h3>${T.promoSaleH3}</h3>
+          <a class="promo-link" style="color:var(--red)">${T.promoShopSale}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section alt" id="trending-section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <div class="abt-badge"><span class="dot"></span> AB Tasty Commerce — Featured Products</div>
+          <h2>${T.trendingTitle}</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div class="trending-nav">
+            <button class="trending-nav-btn" id="trending-prev">&#8592;</button>
+            <button class="trending-nav-btn" id="trending-next">&#8594;</button>
+          </div>
+          <a class="see-all" onclick="navigate('collection',{collection:COLLECTIONS[0]})">${T.viewAll}</a>
+        </div>
+      </div>
+      <div class="trending-carousel" id="trending-grid">
+        ${Array.from({length: 4}, buildSkeletonCard).join('')}
+      </div>
+    </div>
+  </div>
+  ${buildFlaggedRecoSection('flag-reco-home', 'flag-grid-home')}
+  <div class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2>${T.shopByCategory}</h2>
+      </div>
+      <div class="collection-grid">
+        ${COLLECTIONS.slice(0,6).map(c => buildCollCard(c)).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildHero() {
+  const T = THEME_CONTENT[currentTheme];
+  return `
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">${T.heroBadge}</div>
+      <h1>${T.heroH1}</h1>
+      <p>${T.heroP}</p>
+      <div class="hero-ctas">
+        <button class="btn-primary" onclick="navigate('collection',{collection:COLLECTIONS[0]})">${T.heroCta1}</button>
+        <button class="btn-outline" onclick="navigate('collection',{collection:COLLECTIONS[5]})">${T.heroCta2}</button>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-pattern"></div>
+      <div class="hero-maple">${T.decorEmoji}</div>
+      <div class="hero-product-showcase">
+        <div class="product-float">
+          <div class="product-float-emoji">🧥</div>
+          <div class="product-float-name">${T.heroProductName}</div>
+          <div class="product-float-price">${T.priceTag(349)}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildProductCard(p) {
+  const T = THEME_CONTENT[currentTheme];
+  const tp = T.products[p.id] || {};
+  const stars = Array.from({length:5}, (_,i) => `<span class="star${i >= Math.round(p.rating)?` empty`:``}">★</span>`).join('');
+  return `
+  <div class="product-card" onclick="navigate('pdp',{product:PRODUCTS.find(x=>x.id===${p.id})})">
+    <div class="product-thumb" style="background:${p.thumbBg}">
+      <span style="position:relative;z-index:1;font-size:72px">${tp.emoji || p.emoji}</span>
+      ${p.badge==='sale'?`<span class="product-badge-sale">SALE</span>`:''}
+      ${p.badge==='new'?`<span class="product-badge-new">NEW</span>`:''}
+    </div>
+    <div class="product-info">
+      <div class="product-stars">${stars}</div>
+      <div class="product-name">${tp.name || p.name}</div>
+      <div class="product-sub">${tp.sub || p.sub}</div>
+      <div class="product-price-row">
+        <span class="product-price">${T.priceTag(p.price)}</span>
+        ${p.oldPrice?`<span class="product-price-old">${T.priceTag(p.oldPrice)}</span>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildCollCard(c) {
+  const T = THEME_CONTENT[currentTheme];
+  const tc = T.collections[c.id] || {};
+  const bg = tc.bg || c.bg;
+  return `
+  <div class="coll-card" onclick="navigate('collection',{collection:c})">
+    <div class="coll-thumb" style="background:${bg}20">
+      <span style="font-size:72px">${tc.emoji || c.emoji}</span>
+    </div>
+    <div class="coll-info">
+      <h3>${tc.name || c.name}</h3>
+      <p>${tc.desc || c.desc}</p>
+      <span class="coll-count">${T.collCount(c.count)}</span>
+    </div>
+  </div>`;
+}
+
+// ====== COLLECTION PAGE ======
+function buildCollectionPage() {
+  const T = THEME_CONTENT[currentTheme];
+  const c = state.currentCollection || COLLECTIONS[0];
+  const tc = T.collections[c.id] || {};
+  const filtered = state.filterActive === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.category === state.filterActive || (state.filterActive === 'sale' && p.badge === 'sale'));
+  const categories = ['all', ...new Set(PRODUCTS.map(p=>p.category))];
+  return `
+  <div class="collection-header">
+    <div class="container">
+      <div class="abt-badge" style="margin:0 auto 14px"><span class="dot"></span> AB Tasty Commerce — Smart Search & Merch</div>
+      <h1>${tc.emoji || c.emoji} ${tc.name || c.name}</h1>
+      <p>${tc.desc || c.desc}</p>
+    </div>
+  </div>
+  <div class="section">
+    <div class="container">
+      <div class="filter-bar">
+        ${categories.map(cat => `<button class="filter-chip${state.filterActive===cat?' active':''}" data-filter="${cat}">${T.categoryLabels[cat] || cat}</button>`).join('')}
+        <div class="filter-right">
+          <span class="results-count">${T.filterResults(filtered.length)}</span>
+          <select class="sort-select"><option>${T.sortFeatured}</option></select>
+        </div>
+      </div>
+      <div class="product-grid">
+        ${filtered.map(p => buildProductCard(p)).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ====== PDP ======
+function buildPDP() {
+  const T = THEME_CONTENT[currentTheme];
+  const p = state.currentProduct || PRODUCTS[0];
+  const tp = T.products[p.id] || {};
+  const selSize = state.selectedSize;
+  const selColor = state.selectedColor || p.colors[0];
+  const qty = state.qty || 1;
+  const stars = Array.from({length:5}, (_,i) => `<span class="star${i>=Math.round(p.rating)?` empty`:``}">★</span>`).join('');
+  const extras = p.extras || [p.emoji];
+  const displayName = tp.name || p.name;
+  const displaySub  = tp.sub  || p.sub;
+  const displayDesc = tp.desc || p.desc;
+  return `
+  <div class="section">
+    <div class="container">
+      <div class="breadcrumb">
+        <a onclick="navigate('home')">${T.breadcrumbHome}</a> /
+        <a onclick="navigate('collection',{collection:COLLECTIONS.find(c=>c.id===p.category)||COLLECTIONS[0]})">${displaySub}</a> /
+        <span>${displayName}</span>
+      </div>
+      <div class="pdp-grid">
+        <div class="pdp-gallery">
+          <div class="pdp-main-img" style="background:${p.thumbBg}">
+            <span style="font-size:160px" id="pdp-main-emoji">${tp.emoji || p.emoji}</span>
+          </div>
+          <div class="pdp-thumbs">
+            ${[(tp.emoji || p.emoji), ...extras.slice(1)].map((e,i) => `<div class="pdp-thumb${i===0?' active':''}" data-thumb="${e}" data-idx="${i}">${e}</div>`).join('')}
+          </div>
+        </div>
+        <div class="pdp-info">
+          ${p.badge==='new'?`<div class="abt-badge" style="margin-bottom:10px"><span class="dot"></span> ${T.pdpNewArrival}</div>`:''}
+          ${p.badge==='sale'?`<div class="abt-badge" style="margin-bottom:10px;background:var(--red-light);border-color:#F5C4C4;color:var(--red)"><span class="dot" style="background:var(--red)"></span> ${T.pdpOnSale}</div>`:''}
+          <h1>${displayName}</h1>
+          <div class="pdp-meta">
+            <div class="product-stars">${stars}</div>
+            <span style="font-size:13px;color:var(--gray)">${p.reviews} reviews</span>
+          </div>
+          <div class="pdp-price-row" style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
+            <span class="pdp-price">${T.priceTag(p.price)}</span>
+            ${p.oldPrice?`<span class="pdp-price-old">${T.priceTag(p.oldPrice)}</span><span style="font-size:13px;background:var(--red-light);color:var(--red);padding:3px 8px;border-radius:3px;font-weight:700">${T.pdpSave(p.oldPrice-p.price)}</span>`:''}
+          </div>
+          <p class="pdp-desc">${displayDesc}</p>
+          <div class="pdp-options-label">${T.optionColour}</div>
+          <div class="pdp-colors">
+            ${p.colors.map(col => `<div class="color-swatch${selColor===col?' active':''}" style="background:${col}" data-color="${col}" title="${col}"></div>`).join('')}
+          </div>
+          <div class="pdp-options-label">${T.optionSize} — <span style="color:var(--red);font-weight:700;cursor:pointer">${T.sizeGuide}</span></div>
+          <div class="pdp-sizes">
+            ${p.sizes.map(s => `<button class="size-btn${selSize===s?' active':''}" data-size="${s}">${s}</button>`).join('')}
+          </div>
+          <div class="pdp-options-label">${T.optionQty}</div>
+          <div class="pdp-qty">
+            <button class="qty-btn" id="qty-minus">−</button>
+            <span class="qty-val" id="qty-val">${qty}</span>
+            <button class="qty-btn" id="qty-plus">+</button>
+          </div>
+          <button class="pdp-add" id="add-to-cart">${T.addToCart(p.price, qty)}</button>
+          <button class="pdp-wishlist">${T.addToWishlist}</button>
+          <div class="pdp-features">
+            <div class="pdp-feature"><span>🚚</span> ${T.featureShipping}</div>
+            <div class="pdp-feature"><span>${T.flagEmoji}</span> ${T.featureOrigin}</div>
+            <div class="pdp-feature"><span>↩️</span> ${T.featureReturns}</div>
+            <div class="pdp-feature"><span>🌿</span> ${T.featureSustain}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="recs-section" id="pdp-reco-section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <div class="abt-badge"><span class="dot"></span> AB Tasty Commerce — Recommendations</div>
+          <h2>${T.pdpStaticRecoTitle}</h2>
+        </div>
+        <div class="trending-nav">
+          <button class="trending-nav-btn" id="pdp-reco-prev">&#8592;</button>
+          <button class="trending-nav-btn" id="pdp-reco-next">&#8594;</button>
+        </div>
+      </div>
+      <div class="trending-carousel" id="pdp-reco-grid">
+        ${Array.from({length: 4}, buildSkeletonCard).join('')}
+      </div>
+    </div>
+  </div>
+  ${buildFlaggedRecoSection('flag-reco-pdp', 'flag-grid-pdp')}`;
+}
+
+// ====== CHECKOUT ======
+function buildCheckout() {
+  const T = THEME_CONTENT[currentTheme];
+  const cartTotal = state.cart.reduce((sum,i) => sum + i.product.price * i.qty, 0);
+  const shipping = cartTotal >= 100 ? 0 : 12.99;
+  const tax = cartTotal * T.taxRate;
+  const total = cartTotal + shipping + tax;
+  return `
+  <div class="section">
+    <div class="container">
+      <div class="checkout-grid">
+        <div class="checkout-form">
+          <h2>${T.checkoutHeading}</h2>
+          <div class="form-section">
+            <h3>${T.checkoutContact}</h3>
+            <div class="form-row single">
+              <div class="form-group">
+                <label>${T.checkoutEmail}</label>
+                <input type="email" placeholder="${T.checkoutEmailPh}" value="">
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h3>${T.checkoutShipping}</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>${T.checkoutFirstName}</label>
+                <input type="text" placeholder="${T.checkoutFirstNamePh}" value="">
+              </div>
+              <div class="form-group">
+                <label>${T.checkoutLastName}</label>
+                <input type="text" placeholder="${T.checkoutLastNamePh}" value="">
+              </div>
+            </div>
+            <div class="form-row single">
+              <div class="form-group">
+                <label>${T.checkoutAddress}</label>
+                <input type="text" placeholder="${T.checkoutAddressPh}" value="">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>${T.checkoutCity}</label>
+                <input type="text" placeholder="${T.checkoutCityPh}" value="">
+              </div>
+              <div class="form-group">
+                <label>${T.checkoutRegion}</label>
+                <select>${T.checkoutRegions.map(r=>`<option>${r}</option>`).join('')}</select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>${T.checkoutPostal}</label>
+                <input type="text" placeholder="${T.checkoutPostalPh}">
+              </div>
+              <div class="form-group">
+                <label>${T.checkoutCountry}</label>
+                <select>${T.checkoutCountryOptions.map(o=>`<option>${o}</option>`).join('')}</select>
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h3>${T.checkoutPayment}</h3>
+            <div class="form-row single">
+              <div class="form-group">
+                <label>${T.checkoutCardNum}</label>
+                <input type="text" placeholder="4242 4242 4242 4242">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>${T.checkoutExpiry}</label>
+                <input type="text" placeholder="MM / YY">
+              </div>
+              <div class="form-group">
+                <label>${T.checkoutCVV}</label>
+                <input type="text" placeholder="123">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="order-summary">
+            <h3>${T.orderSummary}</h3>
+            ${state.cart.map(i => {
+              const tp = T.products[i.product.id] || {};
+              return `
+            <div class="order-item">
+              <div class="order-item-img">${(T.products[i.product.id]?.emoji) || i.product.emoji}</div>
+              <div style="flex:1">
+                <div class="order-item-name">${tp.name || i.product.name}</div>
+                <div class="order-item-sub">${T.optionSize}: ${i.size} · ${T.optionQty}: ${i.qty}</div>
+              </div>
+              <div class="order-item-price">${T.orderItemPrice(i.product.price*i.qty)}</div>
+            </div>`;}).join('')}
+            <div class="order-totals">
+              <div class="total-row"><span>${T.orderSubtotal}</span><span>${T.formatTotal(cartTotal)}</span></div>
+              <div class="total-row"><span>${T.orderShipping}</span><span>${shipping===0?`<span style="color:var(--pine);font-weight:600">${T.orderShippingFree}</span>`:T.formatTotal(shipping)}</span></div>
+              <div class="total-row"><span>${T.orderTax}</span><span>${T.formatTotal(tax)}</span></div>
+              <div class="total-row grand"><span>${T.orderTotalLabel}</span><span>${T.formatTotal(total)}</span></div>
+            </div>
+            <button class="checkout-btn" id="place-order">${T.placeOrder}</button>
+            <div class="secure-badge">${T.secureBadge}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="recs-section" id="checkout-reco-section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <div class="abt-badge"><span class="dot"></span> AB Tasty Commerce — Recommendations</div>
+          <h2>${T.cartStaticRecoTitle}</h2>
+        </div>
+        <div class="trending-nav">
+          <button class="trending-nav-btn" id="checkout-reco-prev">&#8592;</button>
+          <button class="trending-nav-btn" id="checkout-reco-next">&#8594;</button>
+        </div>
+      </div>
+      <div class="trending-carousel" id="checkout-reco-grid">
+        ${Array.from({length: 4}, buildSkeletonCard).join('')}
+      </div>
+    </div>
+  </div>
+  ${buildFlaggedRecoSection('flag-reco-cart', 'flag-grid-cart')}`;
+}
+
+// ====== SUCCESS ======
+function buildSuccess() {
+  const T = THEME_CONTENT[currentTheme];
+  const orderId = T.successOrderPrefix + Math.floor(Math.random()*90000+10000);
+  return `
+  <div class="success-page">
+    <div class="success-inner">
+      <div class="success-icon">${T.successIcon}</div>
+      <h1>${T.successH1}</h1>
+      <p>${T.successP}</p>
+      <div class="order-no">Order #${orderId}</div>
+      <p style="font-size:14px;color:var(--gray);margin-bottom:28px">${T.successEmail}</p>
+      <button class="btn-primary" onclick="navigate('home')" style="display:inline-block;padding:14px 36px">${T.successContinue}</button>
+    </div>
+  </div>`;
+}
+
+// ====== FOOTER ======
+function buildFooter() {
+  const T = THEME_CONTENT[currentTheme];
+  const shopIdx = [0,1,3,4,5];
+  return `
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <h4>${T.storeIcon} ${T.storeName}</h4>
+        <p>${T.footerTagline}</p>
+      </div>
+      <div class="footer-col">
+        <h5>${T.footerShop}</h5>
+        ${T.footerShopLinks.map((l,i) => `<a onclick="navigate('collection',{collection:COLLECTIONS[${shopIdx[i]}]})">${l}</a>`).join('')}
+      </div>
+      <div class="footer-col">
+        <h5>${T.footerCompany}</h5>
+        ${T.footerCompanyLinks.map(l => `<a href="#">${l}</a>`).join('')}
+      </div>
+      <div class="footer-col">
+        <h5>${T.footerSupport}</h5>
+        ${T.footerSupportLinks.map(l => `<a href="#">${l}</a>`).join('')}
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>${T.footerCopyright}</p>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="footer-manage-link" onclick="openCredentials()">Manage Credentials</button>
+        <div class="abt-powered">
+          Powered by <strong>AB Tasty Commerce</strong> — Search · Merch · Recommendations
+        </div>
+      </div>
+    </div>
+  </footer>`;
+}
+
+// ====== EVENT BINDING ======
+function bindEvents() {
+  // Filter chips (collection page)
+  document.querySelectorAll('.filter-chip').forEach(el => {
+    el.onclick = () => {
+      state.filterActive = el.dataset.filter;
+      render();
+    };
+  });
+
+  // Collection cards
+  document.querySelectorAll('.coll-card').forEach((el, i) => {
+    el.onclick = () => navigate('collection', { collection: COLLECTIONS[i] });
+  });
+
+  // Trending carousel nav
+  const tCarousel = document.getElementById('trending-grid');
+  const tPrev = document.getElementById('trending-prev');
+  const tNext = document.getElementById('trending-next');
+  if (tCarousel && tPrev && tNext) {
+    const scrollBy = () => tCarousel.offsetWidth * 0.8;
+    tPrev.onclick = () => tCarousel.scrollBy({ left: -scrollBy(), behavior: 'smooth' });
+    tNext.onclick = () => tCarousel.scrollBy({ left: scrollBy(), behavior: 'smooth' });
+  }
+
+  // PDP size buttons
+  document.querySelectorAll('.size-btn').forEach(el => {
+    el.onclick = () => { state.selectedSize = el.dataset.size; render(); };
+  });
+
+  // PDP color swatches
+  document.querySelectorAll('.color-swatch').forEach(el => {
+    el.onclick = () => { state.selectedColor = el.dataset.color; render(); };
+  });
+
+  // PDP qty
+  const minus = document.getElementById('qty-minus');
+  const plus = document.getElementById('qty-plus');
+  if (minus) minus.onclick = () => { if (state.qty > 1) { state.qty--; render(); } };
+  if (plus) plus.onclick = () => { state.qty++; render(); };
+
+  // PDP thumbnails
+  document.querySelectorAll('.pdp-thumb').forEach(el => {
+    el.onclick = () => {
+      document.querySelectorAll('.pdp-thumb').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      const mainEmoji = document.getElementById('pdp-main-emoji');
+      if (mainEmoji) mainEmoji.textContent = el.dataset.thumb;
+    };
+  });
+
+  // Add to cart
+  const addBtn = document.getElementById('add-to-cart');
+  if (addBtn) {
+    addBtn.onclick = () => {
+      const p = state.currentProduct;
+      if (!state.selectedSize) { alert('Please select a size'); return; }
+      const existing = state.cart.find(i => i.product.id === p.id && i.size === state.selectedSize);
+      if (existing) existing.qty += state.qty;
+      else state.cart.push({ product: p, size: state.selectedSize, color: state.selectedColor, qty: state.qty });
+      navigate('checkout');
+    };
+  }
+
+  // PDP reco carousel nav
+  const pdpCar = document.getElementById('pdp-reco-grid');
+  const pdpPrev = document.getElementById('pdp-reco-prev');
+  const pdpNext = document.getElementById('pdp-reco-next');
+  if (pdpCar && pdpPrev && pdpNext) {
+    const pdpScroll = () => pdpCar.offsetWidth * 0.8;
+    pdpPrev.onclick = () => pdpCar.scrollBy({ left: -pdpScroll(), behavior: 'smooth' });
+    pdpNext.onclick = () => pdpCar.scrollBy({ left:  pdpScroll(), behavior: 'smooth' });
+  }
+
+  // Checkout reco carousel nav
+  const coCar = document.getElementById('checkout-reco-grid');
+  const coPrev = document.getElementById('checkout-reco-prev');
+  const coNext = document.getElementById('checkout-reco-next');
+  if (coCar && coPrev && coNext) {
+    const coScroll = () => coCar.offsetWidth * 0.8;
+    coPrev.onclick = () => coCar.scrollBy({ left: -coScroll(), behavior: 'smooth' });
+    coNext.onclick = () => coCar.scrollBy({ left:  coScroll(), behavior: 'smooth' });
+  }
+
+  // Place order
+  const orderBtn = document.getElementById('place-order');
+  if (orderBtn) {
+    orderBtn.onclick = () => {
+      state.cart = [];
+      navigate('success');
+    };
+  }
+}
+
+// ====== BOOT ======
+async function boot() {
+  try {
+    siteConfig = await fetch('/api/config').then(r => r.json());
+  } catch(e) {
+    siteConfig = { hasCredentials: false };
+  }
+
+  if (siteConfig.hasCredentials) {
+    // Returning visitor with credentials — apply stored theme and render immediately
+    if (siteConfig.recoId) {
+      ABTASTY_RECO_URL   = `https://uc-info.eu.abtasty.com/v1/reco/${siteConfig.recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
+      ABTASTY_RECO_TOKEN = siteConfig.recoToken || '';
+    }
+    applyTheme(siteConfig.theme || 'canada');
+    loadRecosTag(siteConfig.recoId || '1120');
+    render();
+  } else {
+    // No credentials — show gate over a neutral blank page (no themed content rendered)
+    showGate();
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
