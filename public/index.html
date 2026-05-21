@@ -528,7 +528,10 @@
   }
   .gate-field input:focus { outline: none; border-color: var(--red); }
   .gate-hint  { font-size: 12px; color: var(--gray); margin-top: 8px; line-height: 1.55; }
+  .gate-note  { font-size: 12px; color: var(--gray); margin-top: 10px; line-height: 1.55; padding: 8px 10px; background: #f5f5f5; border-radius: 6px; border-left: 3px solid var(--gray-light); }
   .gate-error { font-size: 12px; color: var(--red); margin-top: 8px; font-weight: 500; }
+  .gate-btn-ghost { flex: 0 0 auto; padding: 13px 18px; background: transparent; color: var(--gray); border: 1.5px solid var(--gray-light); border-radius: var(--radius); font-size: 15px; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+  .gate-btn-ghost:hover { border-color: var(--gray); color: var(--black); }
   .gate-actions { display: flex; gap: 10px; margin-top: 22px; }
   .gate-theme-options { display: flex; gap: 12px; margin: 20px 0 4px; }
   .gate-theme-card {
@@ -970,7 +973,7 @@ function renderGateStep() {
   const nb = document.getElementById('gate-next-btn');
   if (nb) nb.onclick = handleGateNext;
   const sb = document.getElementById('gate-skip-btn');
-  if (sb) sb.onclick = hideGate;
+  if (sb) sb.onclick = () => { gateState.apiKey = ''; gateState.step = 'reco-id'; renderGateStep(); };
   const inp = document.querySelector('#gate-content input');
   if (inp) {
     inp.focus();
@@ -1060,9 +1063,11 @@ function buildGateHTML() {
     <div class="gate-field">
       <input id="${s.inputId}" type="${s.type}" placeholder="${s.placeholder}" value="${s.value}" autocomplete="off">
       <div class="gate-hint">${s.hint}</div>
+      ${s.key === 'api-key' ? `<div class="gate-note">Note: This is only required to automatically create Flags in your FME account. If the flags already exist, you can skip this step.</div>` : ''}
     </div>
     <div class="gate-actions">
       <button class="gate-btn" id="gate-next-btn">${isLast ? 'Save &amp; Launch 🍁' : 'Next →'}</button>
+      ${s.key === 'api-key' ? `<button class="gate-btn gate-btn-ghost" id="gate-skip-btn">Skip</button>` : ''}
     </div>`;
 }
 
