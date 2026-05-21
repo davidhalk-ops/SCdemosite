@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const { v4: uuidv4 } = require('uuid');
 const crypto        = require('crypto');
 const path = require('path');
+const { init: vwoInit } = require('vwo-fme-node-sdk');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,8 +63,7 @@ let vwoClient = null;
 
 async function initVwoClient(sdkKey, accountId) {
   try {
-    const { init } = require('vwo-fme-node-sdk');
-    vwoClient = await init({
+    vwoClient = await vwoInit({
       accountId:    String(accountId),
       sdkKey:       String(sdkKey),
       pollInterval: 60000,
@@ -86,6 +86,16 @@ function encrypt(text) {
   const enc    = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
   return JSON.stringify({ iv: iv.toString('hex'), tag: cipher.getAuthTag().toString('hex'), data: enc.toString('hex') });
 }
+
+// GET /api/health — confirms VWO client status (useful for diagnosing serverless cold starts)
+app.get('/api/health', async (req, res) => {
+  await vwoReady;
+  res.json({
+    vwoClientReady: !!vwoClient,
+    hasAccountId: !!VWO_ACCOUNT_ID,
+    hasSdkKey: !!VWO_SDK_KEY,
+  });
+});
 
 // Serve the VWO FME client-side SDK bundle
 app.get('/vwo-sdk.js', (req, res) => {
