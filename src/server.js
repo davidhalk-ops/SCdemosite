@@ -55,6 +55,8 @@ const credStore = new Map(); // visitorId → { email, accountId, sdkKey }
 
 // ─────────────────────────────────────────────
 // VWO Feature Experimentation client
+// Initialised at module load so Vercel serverless cold starts
+// have the client ready before the first request is handled.
 // ─────────────────────────────────────────────
 let vwoClient = null;
 
@@ -73,6 +75,10 @@ async function initVwoClient(sdkKey, accountId) {
     console.error('❌  VWO FME init failed:', e.message);
   }
 }
+
+const vwoReady = (VWO_SDK_KEY && VWO_ACCOUNT_ID)
+  ? initVwoClient(VWO_SDK_KEY, VWO_ACCOUNT_ID)
+  : Promise.resolve();
 
 function encrypt(text) {
   const iv     = crypto.randomBytes(16);
@@ -100,6 +106,7 @@ app.post('/api/verify-email', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
 
+  await vwoReady;
   if (!vwoClient) {
     console.warn('[VWO] verify-email: no client initialised — allowing through');
     return res.json({ approved: true });
@@ -140,6 +147,7 @@ app.post('/api/check-theme', async (req, res) => {
   const { usertheme } = req.body;
   if (!usertheme) return res.status(400).json({ error: 'usertheme required' });
 
+  await vwoReady;
   if (!vwoClient) {
     console.log('[VWO] check-theme: no client initialised — returning null');
     return res.json({ theme: null });
@@ -308,6 +316,7 @@ app.get('*', (req, res) => {
 //   enable_wishlist → (boolean flag, no variables needed)
 // ─────────────────────────────────────────────
 async function resolveExperiments(visitorId) {
+  await vwoReady;
   if (vwoClient) {
     try {
       const ctx = { id: visitorId };
@@ -352,14 +361,16 @@ function visitorIdToBucket(id) {
   return hash % 100;
 }
 
-app.listen(PORT, () => {
-  console.log(`\n🍁 True North running at http://localhost:${PORT}`);
-  console.log(`   Experiments API: http://localhost:${PORT}/api/experiments`);
-  console.log(`   Products API:    http://localhost:${PORT}/api/products\n`);
-  if (VWO_SDK_KEY && VWO_ACCOUNT_ID) {
-    initVwoClient(VWO_SDK_KEY, VWO_ACCOUNT_ID);
-  } else {
+if (require.main === module) {
+  if (!VWO_SDK_KEY || !VWO_ACCOUNT_ID) {
     console.warn('   ⚠️  VWO_SDK_KEY or VWO_ACCOUNT_ID not set — FME falling back to deterministic bucketing');
     console.warn('   Add them to .env to enable live flag resolution\n');
   }
-});
+  app.listen(PORT, () => {
+    console.log(`\n🍁 True North running at http://localhost:${PORT}`);
+    console.log(`   Experiments API: http://localhost:${PORT}/api/experiments`);
+    console.log(`   Products API:    http://localhost:${PORT}/api/products\n`);
+  });
+}
+
+module.exports = app;
