@@ -333,13 +333,12 @@ app.get('/api/search', async (req, res) => {
   const abtId = c?.abtId || null;
   if (!abtId) return res.json({ hits: [], totalHits: 0, totalPages: 0, page: 0, noIdentifier: true });
 
-  // Forward the raw query string verbatim so bracketed params (facets[], filters[field][])
-  // aren't mangled by Express's qs parser → URLSearchParams round-trip, then append index.
+  // Use subdomain-based URL per getting-started guide:
+  // https://{identifier}.search.abtasty.com/search  (no index param needed)
   const rawQs = req.originalUrl.split('?')[1] || '';
-  const index = encodeURIComponent(`${abtId}_Catalog`);
 
   try {
-    const upstreamUrl = `https://search-api.abtasty.com/search?${rawQs}&index=${index}`;
+    const upstreamUrl = `https://${abtId}.search.abtasty.com/search?${rawQs}`;
     console.log('[Search proxy] upstream URL:', upstreamUrl);
     const upstream = await fetch(upstreamUrl);
     const body = await upstream.json();
