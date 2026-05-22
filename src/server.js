@@ -106,7 +106,7 @@ app.get('/vwo-sdk.js', (req, res) => {
 app.get('/api/config', (req, res) => {
   const c = credStore.get(req.visitorId);
   if (!c?.sdkKey) return res.json({ hasCredentials: false, visitorId: req.visitorId });
-  res.json({ hasCredentials: true, email: c.email || null, accountId: c.accountId, sdkKey: c.sdkKey, recoId: c.recoId || null, recoToken: c.recoToken || null, theme: c.theme || null, visitorId: req.visitorId });
+  res.json({ hasCredentials: true, email: c.email || null, accountId: c.accountId, sdkKey: c.sdkKey, recoId: c.recoId || null, recoToken: c.recoToken || null, abtId: c.abtId || null, theme: c.theme || null, visitorId: req.visitorId });
 });
 
 // POST /api/verify-email — gate access via VWO SCDemosite flag
@@ -136,7 +136,7 @@ app.post('/api/verify-email', async (req, res) => {
 
 // POST /api/credentials — save the visitor's own VWO account credentials
 app.post('/api/credentials', (req, res) => {
-  const { email, accountId, sdkKey, apiKey, recoId, recoToken, theme } = req.body;
+  const { email, accountId, sdkKey, apiKey, recoId, recoToken, abtId, theme } = req.body;
   if (!accountId || !sdkKey)
     return res.status(400).json({ error: 'accountId and sdkKey are required' });
   const existing = credStore.get(req.visitorId) || {};
@@ -147,6 +147,7 @@ app.post('/api/credentials', (req, res) => {
     apiKey:    apiKey    || existing.apiKey    || null,
     recoId:    recoId    || existing.recoId    || null,
     recoToken: recoToken || existing.recoToken || null,
+    abtId:     abtId     || existing.abtId     || null,
     theme:     theme     || existing.theme     || null,
   });
   res.json({ ok: true });
@@ -251,7 +252,9 @@ app.get('/api/search', async (req, res) => {
   if (hitsPerPage) params.set('hitsPerPage', hitsPerPage);
   if (page)        params.set('page', page);
 
-  params.set('index', 'b0ffe524c1c6b488e62b86541f9fd7ec_Catalog');
+  const c = credStore.get(req.visitorId);
+  const abtId = c?.abtId || 'b0ffe524c1c6b488e62b86541f9fd7ec';
+  params.set('index', `${abtId}_Catalog`);
 
   try {
     const upstream = await fetch(

@@ -994,7 +994,7 @@ async function initVwoClientSide(accountId, sdkKey) {
 }
 
 // ====== GATE ======
-const gateState = { step: 'email', email: '', emailError: null, theme: '', themeError: null, accountId: '', sdkKey: '', apiKey: '', recoId: '', recoToken: '' };
+const gateState = { step: 'email', email: '', emailError: null, theme: '', themeError: null, accountId: '', sdkKey: '', apiKey: '', recoId: '', recoToken: '', abtId: '' };
 
 function showGate() {
   const overlay = document.getElementById('gate-overlay');
@@ -1024,10 +1024,27 @@ function selectTheme(value) {
     .catch(e  => console.warn('[VWO] check-theme failed:', e.message));
 }
 
+const GATE_BACK_MAP = {
+  'theme':      'email',
+  'account-id': 'theme',
+  'sdk-key':    'account-id',
+  'api-key':    'sdk-key',
+  'reco-id':    'api-key',
+  'reco-token': 'reco-id',
+  'abt-id':     'reco-token',
+};
+
+function gateBack() {
+  const prev = GATE_BACK_MAP[gateState.step];
+  if (prev) { gateState.step = prev; renderGateStep(); }
+}
+
 function renderGateStep() {
   document.getElementById('gate-content').innerHTML = buildGateHTML();
   const nb = document.getElementById('gate-next-btn');
   if (nb) nb.onclick = handleGateNext;
+  const bb = document.getElementById('gate-back-btn');
+  if (bb) bb.onclick = gateBack;
   const sb = document.getElementById('gate-skip-btn');
   if (sb) sb.onclick = () => { gateState.apiKey = ''; gateState.step = 'reco-id'; renderGateStep(); };
   const inp = document.querySelector('#gate-content input');
@@ -1074,6 +1091,7 @@ function buildGateHTML() {
       </div>
       ${gateState.themeError ? `<div class="gate-error">${gateState.themeError}</div>` : ''}
       <div class="gate-actions">
+        <button class="gate-btn gate-btn-ghost" id="gate-back-btn">← Back</button>
         <button class="gate-btn" id="gate-next-btn">Next →</button>
       </div>`;
   }
@@ -1104,6 +1122,11 @@ function buildGateHTML() {
       hint: 'Your AB Tasty Commerce API key. Used to authenticate product recommendation requests on the homepage, product page, and cart.',
       inputId: 'gate-reco-token', type: 'password', placeholder: '••••••••••••••••',
       value: gateState.recoToken },
+    { key: 'abt-id', num: 6,
+      title: 'AB Tasty Identifier',
+      hint: 'Your AB Tasty identifier — the same one used for your Web Experimentation implementation. This powers the Search and product discovery features in the demo.',
+      inputId: 'gate-abt-id', type: 'text', placeholder: 'e.g. b0ffe524c1c6b488e62b86541f9fd7ec',
+      value: gateState.abtId },
   ];
 
   const s = steps.find(x => x.key === gateState.step);
@@ -1122,6 +1145,7 @@ function buildGateHTML() {
       ${s.key === 'api-key' ? `<div class="gate-note">Note: This is only required to automatically create Flags in your FME account. If the flags already exist, you can skip this step.</div>` : ''}
     </div>
     <div class="gate-actions">
+      <button class="gate-btn gate-btn-ghost" id="gate-back-btn">← Back</button>
       <button class="gate-btn" id="gate-next-btn">${isLast ? 'Save &amp; Launch 🍁' : 'Next →'}</button>
       ${s.key === 'api-key' ? `<button class="gate-btn gate-btn-ghost" id="gate-skip-btn">Skip</button>` : ''}
     </div>`;
@@ -1203,6 +1227,14 @@ async function handleGateNext() {
     const val = el.value.trim();
     if (!val) { el.style.borderColor = 'var(--red)'; return; }
     gateState.recoToken = val;
+    gateState.step = 'abt-id';
+    renderGateStep();
+
+  } else if (step === 'abt-id') {
+    const el = document.getElementById('gate-abt-id');
+    const val = el.value.trim();
+    if (!val) { el.style.borderColor = 'var(--red)'; return; }
+    gateState.abtId = val;
     const btn = document.getElementById('gate-next-btn');
     btn.disabled = true; btn.textContent = 'Verifying…';
     try {
@@ -1220,7 +1252,7 @@ async function handleGateNext() {
       btn.textContent = 'Saving…';
       const r = await fetch('/api/credentials', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: gateState.email, accountId: gateState.accountId, sdkKey: gateState.sdkKey, apiKey: gateState.apiKey, recoId: gateState.recoId, recoToken: gateState.recoToken, theme: gateState.theme }),
+        body: JSON.stringify({ email: gateState.email, accountId: gateState.accountId, sdkKey: gateState.sdkKey, apiKey: gateState.apiKey, recoId: gateState.recoId, recoToken: gateState.recoToken, abtId: gateState.abtId, theme: gateState.theme }),
       });
       if (r.ok) {
         btn.textContent = 'Setting up flags…';
@@ -1235,6 +1267,7 @@ async function handleGateNext() {
         siteConfig.apiKey         = gateState.apiKey;
         siteConfig.recoId         = gateState.recoId;
         siteConfig.recoToken      = gateState.recoToken;
+        siteConfig.abtId          = gateState.abtId;
         siteConfig.theme          = gateState.theme;
         applyTheme(gateState.theme || 'canada');
         loadRecosTag(gateState.recoId);
@@ -1292,6 +1325,10 @@ function openCredentials() {
       <label>AB Tasty Commerce API Key</label>
       <input id="cred-reco-token" type="password" value="${siteConfig.recoToken || ''}" autocomplete="off">
     </div>
+    <div class="creds-field">
+      <label>AB Tasty Identifier</label>
+      <input id="cred-abt-id" type="text" value="${siteConfig.abtId || ''}" autocomplete="off">
+    </div>
     <button class="creds-save-btn" id="creds-save-btn" onclick="saveCredentials()">Save Changes</button>
     <button class="creds-reset-btn" onclick="resetCredentials()">Reset All Credentials</button>
   `;
@@ -1317,10 +1354,11 @@ async function saveCredentials() {
   const apiKey    = document.getElementById('cred-api-key').value.trim();
   const recoId    = document.getElementById('cred-reco-id').value.trim();
   const recoToken = document.getElementById('cred-reco-token').value.trim();
+  const abtId     = document.getElementById('cred-abt-id').value.trim();
   try {
     const r = await fetch('/api/credentials', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: siteConfig.email || '', accountId, sdkKey, apiKey: apiKey || undefined, recoId, recoToken, theme: selectedTheme || undefined }),
+      body: JSON.stringify({ email: siteConfig.email || '', accountId, sdkKey, apiKey: apiKey || undefined, recoId, recoToken, abtId: abtId || undefined, theme: selectedTheme || undefined }),
     });
     if (r.ok) {
       siteConfig.accountId = accountId;
@@ -1328,6 +1366,7 @@ async function saveCredentials() {
       if (apiKey) siteConfig.apiKey = apiKey;
       siteConfig.recoId    = recoId;
       siteConfig.recoToken = recoToken;
+      if (abtId) siteConfig.abtId = abtId;
       if (selectedTheme) {
         siteConfig.theme = selectedTheme;
         applyTheme(selectedTheme);
