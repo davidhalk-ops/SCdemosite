@@ -339,8 +339,11 @@ app.get('/api/search', async (req, res) => {
   const index = encodeURIComponent(`${abtId}_Catalog`);
 
   try {
-    const upstream = await fetch(`https://search-api.abtasty.com/search?${rawQs}&index=${index}`);
+    const upstreamUrl = `https://search-api.abtasty.com/search?${rawQs}&index=${index}`;
+    console.log('[Search proxy] upstream URL:', upstreamUrl);
+    const upstream = await fetch(upstreamUrl);
     const body = await upstream.json();
+    console.log('[Search proxy] status:', upstream.status, '| hits:', body.hits?.length, '| facets:', JSON.stringify(body.facets));
     res.status(upstream.status).json(body);
   } catch(e) {
     console.error('[Search proxy]', e.message);

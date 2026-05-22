@@ -2227,6 +2227,7 @@ async function _doSearch(query, append) {
     }
     _totalHits  = data.totalHits  || 0;
     _totalPages = data.totalPages || 0;
+    console.log('[Search] hits:', data.hits?.length, '| facets:', JSON.stringify(data.facets));
     if (data.facets && Object.keys(data.facets).length) _lastFacets = data.facets;
     _accHits = append ? [..._accHits, ...(data.hits || [])] : (data.hits || []);
     _renderControls(); _renderFacets(); _renderAccHits(); _renderLoadMore();
