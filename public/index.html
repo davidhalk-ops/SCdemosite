@@ -580,34 +580,58 @@
   .creds-reset-btn { width: 100%; padding: 11px; background: none; border: 1.5px solid #e0d0d0; color: #c0392b; border-radius: var(--radius); font-size: 13px; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; }
   .creds-reset-btn:hover { background: #fdf0ef; border-color: #c0392b; }
 
-  /* ====== SEARCH OVERLAY ====== */
-  .nav-search { cursor: pointer; transition: background 0.15s; }
-  .nav-search:hover { background: var(--gray-light); }
-  .search-panel {
-    background: white; border-radius: var(--radius-lg);
-    width: 100%; max-width: 640px; box-shadow: 0 24px 80px rgba(26,26,24,0.3);
-    overflow: hidden; animation: modalIn 0.2s ease;
+  /* ====== NAV SEARCH ====== */
+  .nav-search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--cream); border: 1px solid var(--gray-light);
+    border-radius: 20px; padding: 7px 16px; width: 200px;
+    transition: width 0.2s ease, border-color 0.15s, background 0.15s; cursor: text;
   }
-  .search-input-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 16px 20px; border-bottom: 1.5px solid var(--gray-light);
+  .nav-search-wrap:focus-within {
+    width: 260px; border-color: var(--gray); background: white;
   }
-  .search-input-row input {
-    flex: 1; border: none; outline: none;
-    font-size: 18px; font-family: var(--font-body); color: var(--black); background: transparent;
+  .nav-search-wrap input {
+    border: none; background: transparent; outline: none;
+    font-size: 13px; font-family: var(--font-body); color: var(--black); width: 100%; min-width: 0;
   }
-  .search-input-row input::placeholder { color: var(--gray); }
-  .search-close-btn {
-    background: var(--cream); border: none; border-radius: 50%;
-    width: 30px; height: 30px; cursor: pointer; color: var(--gray);
+  .nav-search-wrap input::placeholder { color: var(--gray); }
+
+  /* ====== NAV SEARCH DROPDOWN ====== */
+  .search-drop-hit {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 18px; cursor: pointer; transition: background 0.1s;
+    border-bottom: 1px solid var(--gray-light);
+  }
+  .search-drop-hit:hover { background: var(--cream); }
+  .search-drop-hit:last-of-type { border-bottom: none; }
+  .search-drop-thumb {
+    width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0;
+    background: var(--cream); overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; transition: background 0.15s; flex-shrink: 0;
   }
-  .search-close-btn:hover { background: var(--gray-light); color: var(--black); }
+  .search-drop-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-drop-price { font-size: 14px; font-weight: 700; color: var(--black); flex-shrink: 0; }
+  .search-drop-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; background: var(--cream); border-top: 1px solid var(--gray-light);
+  }
+  .search-drop-view-all {
+    background: var(--black); color: white; border: none; border-radius: var(--radius);
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    font-family: var(--font-body); cursor: pointer; transition: opacity 0.15s;
+  }
+  .search-drop-view-all:hover { opacity: 0.82; }
+
+  /* ====== SEARCH RESULTS PAGE ====== */
+  .search-page-header {
+    background: var(--black); color: white; padding: 48px 0 36px;
+  }
+  .search-page-query { font-family: var(--font-display); font-size: 36px; font-weight: 700; margin-bottom: 6px; }
+  .search-page-query em { color: var(--red); font-style: normal; }
   .search-controls-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 9px 20px; border-bottom: 1px solid var(--gray-light);
-    font-size: 12px; color: var(--gray);
+    padding: 12px 0; font-size: 12px; color: var(--gray); margin-bottom: 16px;
+    border-bottom: 1px solid var(--gray-light);
   }
   .search-semantic-toggle {
     display: flex; background: var(--cream); border-radius: 20px;
@@ -620,13 +644,14 @@
   }
   .search-semantic-toggle button.active { background: var(--black); color: white; border-radius: 20px; }
   .search-facets-row {
-    padding: 10px 20px; border-bottom: 1px solid var(--gray-light);
     display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    padding: 14px 0; margin-bottom: 28px;
+    border-bottom: 1px solid var(--gray-light);
   }
   .search-facet-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .search-facet-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); flex-shrink: 0; }
   .search-facet-chip {
-    padding: 4px 10px; border-radius: 20px; font-size: 12px;
+    padding: 5px 12px; border-radius: 20px; font-size: 12px;
     border: 1.5px solid var(--gray-light); background: white; cursor: pointer;
     font-family: var(--font-body); transition: all 0.12s; color: var(--black);
   }
@@ -634,47 +659,22 @@
   .search-facet-chip.active { background: var(--black); color: white; border-color: var(--black); }
   .search-range-inputs { display: flex; align-items: center; gap: 6px; }
   .search-range-inputs input {
-    width: 68px; padding: 4px 8px; border: 1.5px solid var(--gray-light);
+    width: 72px; padding: 5px 9px; border: 1.5px solid var(--gray-light);
     border-radius: var(--radius); font-size: 12px; font-family: var(--font-body); color: var(--black);
   }
   .search-range-inputs input:focus { outline: none; border-color: var(--black); }
   .search-range-btn {
-    padding: 4px 10px; background: var(--black); color: white; border: none;
+    padding: 5px 12px; background: var(--black); color: white; border: none;
     border-radius: var(--radius); font-size: 12px; cursor: pointer; font-family: var(--font-body);
   }
-  .search-results { max-height: 360px; overflow-y: auto; }
-  .search-hit {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 20px; cursor: pointer; transition: background 0.12s;
-    border-bottom: 1px solid var(--gray-light);
-  }
-  .search-hit:hover { background: var(--cream); }
-  .search-hit:last-child { border-bottom: none; }
-  .search-hit-thumb {
-    width: 48px; height: 48px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px; flex-shrink: 0;
-  }
-  .search-hit-info { flex: 1; min-width: 0; }
-  .search-hit-name { font-size: 15px; font-weight: 600; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .search-hit-price { font-size: 16px; font-weight: 700; color: var(--black); flex-shrink: 0; }
+  .search-empty { padding: 80px 0; text-align: center; color: var(--gray); font-size: 15px; }
+  .search-loading { padding: 80px 0; text-align: center; color: var(--gray); font-size: 14px; }
   .search-load-more-btn {
-    width: 100%; padding: 12px; background: transparent; color: var(--gray);
-    border: 1.5px solid var(--gray-light); border-radius: var(--radius); font-size: 13px;
+    padding: 13px 32px; background: transparent; color: var(--gray);
+    border: 1.5px solid var(--gray-light); border-radius: var(--radius); font-size: 14px;
     font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: all 0.15s;
   }
   .search-load-more-btn:hover { border-color: var(--gray); color: var(--black); }
-  .search-empty { padding: 36px 20px; text-align: center; color: var(--gray); font-size: 14px; }
-  .search-loading { padding: 36px 20px; text-align: center; color: var(--gray); font-size: 14px; }
-  .search-footer { padding: 10px 20px; border-top: 1px solid var(--gray-light); text-align: right; font-size: 11px; color: var(--gray); }
-  .search-suggestions { border-bottom: 1px solid var(--gray-light); }
-  .search-suggestion-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 20px; cursor: pointer; font-size: 14px;
-    color: var(--black); transition: background 0.1s;
-  }
-  .search-suggestion-item:hover { background: var(--cream); }
-  .search-suggestion-icon { color: var(--gray); font-size: 13px; flex-shrink: 0; }
 
   /* ====== FRANCE THEME ====== */
   [data-theme="france"] {
@@ -711,21 +711,7 @@
     <div id="creds-content"></div>
   </div>
 </div>
-<div id="search-overlay" class="gate-overlay hidden" style="align-items:flex-start;padding-top:80px;">
-  <div class="search-panel">
-    <div class="search-input-row">
-      <span style="font-size:18px;color:var(--gray)">🔍</span>
-      <input id="search-input" type="text" placeholder="Search products…" autocomplete="off">
-      <button class="search-close-btn" onclick="closeSearch()" title="Close">✕</button>
-    </div>
-    <div id="search-suggestions" class="search-suggestions" style="display:none"></div>
-    <div id="search-controls" class="search-controls-row" style="display:none"></div>
-    <div id="search-facets" class="search-facets-row" style="display:none"></div>
-    <div id="search-results"></div>
-    <div id="search-load-more-row" style="display:none;padding:12px 20px;border-top:1px solid var(--gray-light)"></div>
-    <div class="search-footer">Powered by <strong>Wingify Commerce</strong> Search</div>
-  </div>
-</div>
+<div id="nav-search-dropdown" style="display:none;position:fixed;z-index:300;background:white;border-radius:var(--radius-lg);box-shadow:0 24px 80px rgba(26,26,24,0.22);border:1px solid var(--gray-light);overflow:hidden;animation:modalIn 0.15s ease"></div>
 <div id="app"></div>
 
 <script>
@@ -1462,9 +1448,12 @@ function render() {
   wrapper.innerHTML = buildPage();
   app.appendChild(wrapper);
   bindEvents();
+  _bindNavSearch();
+  if (state.page !== 'search') _hideNavDropdown();
   if (state.page === 'home') fetchTrendingProducts();
   if (state.page === 'pdp')  fetchRecoGrid('pdp-reco-grid', state.currentProduct?.id);
   if (state.page === 'checkout') fetchRecoGrid('checkout-reco-grid');
+  if (state.page === 'search') _doSearch();
   loadFlaggedRecos();
 }
 
@@ -1499,6 +1488,7 @@ function buildPage() {
   else if (state.page === 'pdp') content = buildPDP();
   else if (state.page === 'checkout') content = buildCheckout();
   else if (state.page === 'success') content = buildSuccess();
+  else if (state.page === 'search') content = buildSearch();
   const footer = buildFooter();
   return nav + content + footer;
 }
@@ -1521,7 +1511,11 @@ function buildNav() {
         <a href="#" onclick="alert('Wingify Commerce powers our story personalization!');return false">${T.navStory}</a>
       </div>
       <div class="nav-right">
-        <button class="nav-search" onclick="openSearch()"><span>🔍</span> ${T.navSearch}</button>
+        <div class="nav-search-wrap">
+          <span style="color:var(--gray);font-size:14px;flex-shrink:0">🔍</span>
+          <input id="nav-search-input" type="text" placeholder="${T.navSearch}"
+            value="${_escHtml(state.page === 'search' ? _searchQuery : '')}" autocomplete="off">
+        </div>
         <button class="nav-icon" onclick="alert('${T.addToWishlist} — powered by Wingify Commerce recommendations!')">♡</button>
         <button class="nav-icon cart-badge" onclick="navigate('checkout')">
           🛒
@@ -2060,84 +2054,119 @@ function bindEvents() {
 const SEARCH_BASE      = '/api/search';
 const SEARCH_EMPTY_MSG = 'Either catalog is empty, or the identifier entered is incorrect.';
 
-let _searchDebounce = null;
-let _autoDebounce   = null;
-let _searchQuery    = '';
-let _semanticRatio  = 0;
-let _activeFilters  = {}; // field → Set<string>
-let _priceMin       = '';
-let _priceMax       = '';
-let _currentPage    = 0;
-let _accHits        = [];
-let _lastFacets     = {};
-let _totalPages     = 0;
-let _totalHits      = 0;
+let _navDebounce   = null;
+let _searchQuery   = '';
+let _semanticRatio = 0;
+let _activeFilters = {}; // field → Set<string>
+let _priceMin      = '';
+let _priceMax      = '';
+let _currentPage   = 0;
+let _accHits       = [];
+let _lastFacets    = {};
+let _totalPages    = 0;
+let _totalHits     = 0;
 
 function _escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function _hideSuggestions() {
-  const el = document.getElementById('search-suggestions');
-  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+// ── Inline nav dropdown ───────────────────────────────────────────────────────
+
+function _positionDropdown() {
+  const wrap = document.querySelector('.nav-search-wrap');
+  const dd   = document.getElementById('nav-search-dropdown');
+  if (!wrap || !dd) return;
+  const r = wrap.getBoundingClientRect();
+  dd.style.top   = `${r.bottom + 6}px`;
+  dd.style.right = `${window.innerWidth - r.right}px`;
+  dd.style.width = `${Math.max(r.width, 380)}px`;
 }
 
-async function _doAutocomplete(query) {
-  if (!query.trim() || query.length < 2) { _hideSuggestions(); return; }
+function _hideNavDropdown() {
+  const dd = document.getElementById('nav-search-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+function _showNavDropdown(hits, totalHits) {
+  const dd = document.getElementById('nav-search-dropdown');
+  if (!dd || !hits.length) { _hideNavDropdown(); return; }
+  dd.innerHTML = hits.map(hit => {
+    const name  = hit.title || hit.name || 'Product';
+    const price = hit.price != null ? `$${Number(hit.price).toFixed(0)}` : '';
+    const img   = hit.img_link
+      ? `<img src="${_escHtml(hit.img_link)}" style="width:44px;height:44px;object-fit:cover" loading="lazy" alt="">`
+      : `<span style="font-size:26px">🛍️</span>`;
+    return `<div class="search-drop-hit" data-link="${_escHtml(hit.link || '')}">
+      <div class="search-drop-thumb">${img}</div>
+      <div class="search-drop-name">${_escHtml(name)}</div>
+      ${price ? `<div class="search-drop-price">${_escHtml(price)}</div>` : ''}
+    </div>`;
+  }).join('') + `
+    <div class="search-drop-footer">
+      <span style="font-size:12px;color:var(--gray)">${totalHits.toLocaleString()} result${totalHits !== 1 ? 's' : ''}</span>
+      <button class="search-drop-view-all" id="search-view-all-btn">View all results →</button>
+    </div>`;
+  _positionDropdown();
+  dd.style.display = 'block';
+  dd.querySelectorAll('.search-drop-hit').forEach(el => {
+    el.onclick = () => { const l = el.dataset.link; if (l) { _hideNavDropdown(); window.open(l, '_blank', 'noopener'); } };
+  });
+  document.getElementById('search-view-all-btn').onclick = () => _viewAllSearch(_searchQuery);
+}
+
+async function _doNavSearch(query) {
+  _searchQuery = query;
+  if (!query.trim()) { _hideNavDropdown(); return; }
   try {
-    const res  = await fetch(`/api/autocomplete?text=${encodeURIComponent(query)}&hitsPerPage=5`);
-    if (!res.ok) return;
+    const res  = await fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=5`);
+    if (!res.ok) throw new Error('err');
     const data = await res.json();
-    const suggs = data.suggestions || [];
-    if (!suggs.length) { _hideSuggestions(); return; }
-    const el = document.getElementById('search-suggestions');
-    el.style.display = 'block';
-    el.innerHTML = suggs.map(s =>
-      `<div class="search-suggestion-item" data-text="${_escHtml(s.text)}">
-        <span class="search-suggestion-icon">↗</span>
-        <span>${_escHtml(s.text)}</span>
-       </div>`
-    ).join('');
-    el.querySelectorAll('.search-suggestion-item').forEach(item => {
-      item.onclick = () => {
-        const text = item.dataset.text;
-        document.getElementById('search-input').value = text;
-        _hideSuggestions();
-        clearTimeout(_searchDebounce);
-        clearTimeout(_autoDebounce);
-        _doSearch(text);
-      };
-    });
-  } catch(e) { _hideSuggestions(); }
+    if (data.noIdentifier) { _hideNavDropdown(); return; }
+    _showNavDropdown(data.hits || [], data.totalHits || 0);
+  } catch(e) { _hideNavDropdown(); }
 }
 
-function openSearch() {
-  const overlay = document.getElementById('search-overlay');
-  overlay.classList.remove('hidden');
-  overlay.onclick = e => { if (e.target === overlay) closeSearch(); };
-  _searchQuery = ''; _semanticRatio = 0; _activeFilters = {};
-  _priceMin = ''; _priceMax = ''; _currentPage = 0; _accHits = [];
-  _lastFacets = {}; _totalPages = 0; _totalHits = 0;
-  document.getElementById('search-input').value = '';
-  document.getElementById('search-results').innerHTML = '';
-  document.getElementById('search-controls').style.display      = 'none';
-  document.getElementById('search-facets').style.display        = 'none';
-  document.getElementById('search-load-more-row').style.display = 'none';
-  _hideSuggestions();
-  document.getElementById('search-input').focus();
+function _viewAllSearch(query) {
+  _searchQuery = query || _searchQuery;
+  _activeFilters = {}; _priceMin = ''; _priceMax = '';
+  _currentPage = 0; _accHits = []; _lastFacets = {};
+  _totalPages = 0; _totalHits = 0; _semanticRatio = 0;
+  _hideNavDropdown();
+  navigate('search');
 }
 
-function closeSearch() {
-  document.getElementById('search-overlay').classList.add('hidden');
-  clearTimeout(_searchDebounce);
-  clearTimeout(_autoDebounce);
-  _hideSuggestions();
-}
+// Close dropdown on outside click — registered once at script load
+document.addEventListener('click', e => {
+  if (!e.target.closest('.nav-search-wrap') && !e.target.closest('#nav-search-dropdown')) {
+    _hideNavDropdown();
+  }
+});
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+// ── Full search results page ──────────────────────────────────────────────────
+
+function buildSearch() {
+  return `
+  <div class="search-page-header">
+    <div class="container">
+      <div class="abt-badge" style="margin-bottom:12px"><span class="dot"></span> Wingify Commerce — Search</div>
+      <h1 class="search-page-query">Results for <em>"${_escHtml(_searchQuery)}"</em></h1>
+    </div>
+  </div>
+  <div class="section">
+    <div class="container">
+      <div id="search-controls" class="search-controls-row" style="display:none"></div>
+      <div id="search-facets" class="search-facets-row" style="display:none"></div>
+      <div id="search-results"><div class="search-loading">Searching…</div></div>
+      <div id="search-load-more-row" style="display:none;padding:32px 0;text-align:center"></div>
+      <div style="padding:20px 0;border-top:1px solid var(--gray-light);text-align:right;font-size:11px;color:var(--gray);margin-top:16px">
+        Powered by <strong>Wingify Commerce</strong> Search
+      </div>
+    </div>
+  </div>`;
+}
 
 function _buildSearchParams(page) {
-  const p = new URLSearchParams({ text: _searchQuery, hitsPerPage: 8, page });
+  const p = new URLSearchParams({ text: _searchQuery, hitsPerPage: 12, page });
   if (_semanticRatio > 0) p.set('semanticRatio', String(_semanticRatio));
   Object.entries(_activeFilters).forEach(([field, vals]) => {
     [...vals].forEach(v => p.append(`filters[${field}][]`, v));
@@ -2151,18 +2180,14 @@ function _buildSearchParams(page) {
 async function _doSearch(query, append) {
   if (query !== undefined) _searchQuery = query;
   const resultsEl = document.getElementById('search-results');
-  if (!_searchQuery.trim()) {
-    resultsEl.innerHTML = '';
-    ['search-controls','search-facets','search-load-more-row'].forEach(id => document.getElementById(id).style.display = 'none');
-    _accHits = [];
-    return;
-  }
+  if (!resultsEl) return;
+  if (!_searchQuery.trim()) { resultsEl.innerHTML = ''; _accHits = []; return; }
   if (!append) {
     _currentPage = 0; _accHits = [];
     resultsEl.innerHTML = '<div class="search-loading">Searching…</div>';
   } else {
-    document.getElementById('search-load-more-row').innerHTML =
-      '<div style="text-align:center;padding:8px;color:var(--gray);font-size:13px">Loading…</div>';
+    const lm = document.getElementById('search-load-more-row');
+    if (lm) lm.innerHTML = '<div style="text-align:center;padding:8px;color:var(--gray);font-size:13px">Loading…</div>';
   }
   try {
     const res  = await fetch(`${SEARCH_BASE}?${_buildSearchParams(_currentPage)}`);
@@ -2170,24 +2195,24 @@ async function _doSearch(query, append) {
     const data = await res.json();
     if (data.noIdentifier) {
       resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
-      ['search-controls','search-facets','search-load-more-row'].forEach(id => document.getElementById(id).style.display = 'none');
       return;
     }
     _totalHits  = data.totalHits  || 0;
     _totalPages = data.totalPages || 0;
     if (data.facets && Object.keys(data.facets).length) _lastFacets = data.facets;
     _accHits = append ? [..._accHits, ...(data.hits || [])] : (data.hits || []);
-    _hideSuggestions();
     _renderControls(); _renderFacets(); _renderAccHits(); _renderLoadMore();
   } catch(e) {
     console.warn('[Search]', e.message);
     if (!append) resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
-    document.getElementById('search-load-more-row').style.display = 'none';
+    const lm = document.getElementById('search-load-more-row');
+    if (lm) lm.style.display = 'none';
   }
 }
 
 function _renderControls() {
   const el = document.getElementById('search-controls');
+  if (!el) return;
   el.style.display = 'flex';
   const activeCount = Object.keys(_activeFilters).length + (_priceMin || _priceMax ? 1 : 0);
   const clearBtn = activeCount > 0
@@ -2205,21 +2230,18 @@ function _renderControls() {
   el.querySelectorAll('.search-semantic-toggle button').forEach(btn => {
     btn.onclick = () => { _semanticRatio = Number(btn.dataset.ratio); _doSearch(); };
   });
-  const clearFiltersBtn = document.getElementById('search-clear-filters');
-  if (clearFiltersBtn) {
-    clearFiltersBtn.onclick = () => { _activeFilters = {}; _priceMin = ''; _priceMax = ''; _doSearch(); };
-  }
+  const cfBtn = document.getElementById('search-clear-filters');
+  if (cfBtn) cfBtn.onclick = () => { _activeFilters = {}; _priceMin = ''; _priceMax = ''; _doSearch(); };
 }
 
 function _renderFacets() {
-  const el      = document.getElementById('search-facets');
+  const el = document.getElementById('search-facets');
+  if (!el) return;
   const entries = Object.entries(_lastFacets);
   if (!entries.length) { el.style.display = 'none'; return; }
   let html = '';
   entries.forEach(([field, facet]) => {
-    // API response shape: { type: 'list'|'range', values: [...] | {min,max} }
-    const type   = facet?.type;
-    const values = facet?.values;
+    const type = facet?.type, values = facet?.values;
     if (type === 'list' && Array.isArray(values) && values.length) {
       const label = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
       const chips = values.slice(0, 8).map(([val, count]) => {
@@ -2245,12 +2267,8 @@ function _renderFacets() {
     chip.onclick = () => {
       const { field, val } = chip.dataset;
       if (!_activeFilters[field]) _activeFilters[field] = new Set();
-      if (_activeFilters[field].has(val)) {
-        _activeFilters[field].delete(val);
-        if (!_activeFilters[field].size) delete _activeFilters[field];
-      } else {
-        _activeFilters[field].add(val);
-      }
+      if (_activeFilters[field].has(val)) { _activeFilters[field].delete(val); if (!_activeFilters[field].size) delete _activeFilters[field]; }
+      else _activeFilters[field].add(val);
       _doSearch();
     };
   });
@@ -2260,60 +2278,67 @@ function _renderFacets() {
     _priceMax = document.getElementById('facet-price-max').value || '';
     _doSearch();
   };
-  const minInput = document.getElementById('facet-price-min');
-  const maxInput = document.getElementById('facet-price-max');
-  if (minInput) minInput.addEventListener('keydown', e => { if (e.key === 'Enter') go?.click(); });
-  if (maxInput) maxInput.addEventListener('keydown', e => { if (e.key === 'Enter') go?.click(); });
+  ['facet-price-min','facet-price-max'].forEach(id => {
+    const inp = document.getElementById(id);
+    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') go?.click(); });
+  });
 }
 
 function _renderAccHits() {
   const el = document.getElementById('search-results');
+  if (!el) return;
   if (!_accHits.length) { el.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`; return; }
-  el.innerHTML = _accHits.map(hit => {
-    const name  = hit.title || hit.name || 'Product';
+  el.innerHTML = `<div class="product-grid">${_accHits.map(hit => {
+    const name  = _escHtml(hit.title || hit.name || 'Product');
     const price = hit.price != null ? `$${Number(hit.price).toFixed(0)}` : '';
     const thumb = hit.img_link
-      ? `<img src="${_escHtml(hit.img_link)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" loading="lazy" alt="">`
-      : `<span style="font-size:28px">🛍️</span>`;
-    return `<div class="search-hit" data-link="${_escHtml(hit.link||'')}">
-      <div class="search-hit-thumb" style="background:#F4F1EA;overflow:hidden">${thumb}</div>
-      <div class="search-hit-info"><div class="search-hit-name">${_escHtml(name)}</div></div>
-      ${price?`<div class="search-hit-price">${_escHtml(price)}</div>`:''}
+      ? `<img src="${_escHtml(hit.img_link)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" alt="">`
+      : `<span style="font-size:64px">🛍️</span>`;
+    return `<div class="product-card search-result-card" data-link="${_escHtml(hit.link || '')}">
+      <div class="product-thumb" style="background:#F4F1EA;overflow:hidden;padding:0">${thumb}</div>
+      <div class="product-info">
+        <div class="product-name">${name}</div>
+        ${price ? `<div class="product-price-row"><span class="product-price">${_escHtml(price)}</span></div>` : ''}
+      </div>
     </div>`;
-  }).join('');
-  el.querySelectorAll('.search-hit').forEach(h => {
-    h.onclick = () => { const l = h.dataset.link; if (l) { closeSearch(); window.open(l,'_blank','noopener'); } };
+  }).join('')}</div>`;
+  el.querySelectorAll('.search-result-card').forEach(card => {
+    card.onclick = () => { const l = card.dataset.link; if (l) window.open(l, '_blank', 'noopener'); };
   });
 }
 
 function _renderLoadMore() {
   const el = document.getElementById('search-load-more-row');
+  if (!el) return;
   if (_currentPage < _totalPages - 1) {
     const rem = _totalHits - _accHits.length;
     el.style.display = 'block';
-    el.innerHTML = `<button class="search-load-more-btn">Load ${Math.min(rem,8)} more <span style="opacity:0.6">(${rem} remaining)</span></button>`;
+    el.innerHTML = `<button class="search-load-more-btn">Load ${Math.min(rem, 12)} more <span style="opacity:0.6">(${rem} remaining)</span></button>`;
     el.querySelector('button').onclick = () => { _currentPage++; _doSearch(undefined, true); };
   } else {
     el.style.display = 'none';
   }
 }
 
-// Wire up search input — script runs at end of body, DOM already ready
-document.getElementById('search-input').addEventListener('input', e => {
-  const val = e.target.value;
-  clearTimeout(_searchDebounce);
-  clearTimeout(_autoDebounce);
-  _autoDebounce   = setTimeout(() => _doAutocomplete(val), 150);
-  _searchDebounce = setTimeout(() => _doSearch(val), 300);
-});
-document.getElementById('search-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    clearTimeout(_searchDebounce);
-    clearTimeout(_autoDebounce);
-    _hideSuggestions();
-    _doSearch(e.target.value);
-  }
-});
+// ── Nav input binding — re-wired by _bindNavSearch() after every render ───────
+function _bindNavSearch() {
+  const inp = document.getElementById('nav-search-input');
+  if (!inp) return;
+  inp.addEventListener('input', e => {
+    clearTimeout(_navDebounce);
+    _navDebounce = setTimeout(() => _doNavSearch(e.target.value), 200);
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { clearTimeout(_navDebounce); _viewAllSearch(inp.value); }
+    if (e.key === 'Escape') _hideNavDropdown();
+  });
+  inp.addEventListener('focus', () => {
+    if (_searchQuery && document.getElementById('nav-search-dropdown')?.children.length) {
+      _positionDropdown();
+      document.getElementById('nav-search-dropdown').style.display = 'block';
+    }
+  });
+}
 
 // ====== LOCAL STORAGE HELPERS ======
 const LS_KEY = 'tn_creds';
