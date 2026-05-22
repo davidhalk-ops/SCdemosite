@@ -333,13 +333,13 @@ app.get('/api/search', async (req, res) => {
   const abtId = c?.abtId || null;
   if (!abtId) return res.json({ hits: [], totalHits: 0, totalPages: 0, page: 0, noIdentifier: true });
 
-  // Forward all query params from the client (text, hitsPerPage, page, semanticRatio, filters[...])
-  // then inject the index param derived from the visitor's stored abtId
-  const params = new URLSearchParams(req.query);
-  params.set('index', `${abtId}_Catalog`);
+  // Forward the raw query string verbatim so bracketed params (facets[], filters[field][])
+  // aren't mangled by Express's qs parser → URLSearchParams round-trip, then append index.
+  const rawQs = req.originalUrl.split('?')[1] || '';
+  const index = encodeURIComponent(`${abtId}_Catalog`);
 
   try {
-    const upstream = await fetch(`https://search-api.abtasty.com/search?${params}`);
+    const upstream = await fetch(`https://search-api.abtasty.com/search?${rawQs}&index=${index}`);
     const body = await upstream.json();
     res.status(upstream.status).json(body);
   } catch(e) {
