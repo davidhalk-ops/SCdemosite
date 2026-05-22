@@ -580,6 +580,51 @@
   .creds-reset-btn { width: 100%; padding: 11px; background: none; border: 1.5px solid #e0d0d0; color: #c0392b; border-radius: var(--radius); font-size: 13px; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; }
   .creds-reset-btn:hover { background: #fdf0ef; border-color: #c0392b; }
 
+  /* ====== SEARCH OVERLAY ====== */
+  .nav-search { cursor: pointer; transition: background 0.15s; }
+  .nav-search:hover { background: var(--gray-light); }
+  .search-panel {
+    background: white; border-radius: var(--radius-lg);
+    width: 100%; max-width: 640px; box-shadow: 0 24px 80px rgba(26,26,24,0.3);
+    overflow: hidden; animation: modalIn 0.2s ease;
+  }
+  .search-input-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; border-bottom: 1.5px solid var(--gray-light);
+  }
+  .search-input-row input {
+    flex: 1; border: none; outline: none;
+    font-size: 18px; font-family: var(--font-body); color: var(--black); background: transparent;
+  }
+  .search-input-row input::placeholder { color: var(--gray); }
+  .search-close-btn {
+    background: var(--cream); border: none; border-radius: 50%;
+    width: 30px; height: 30px; cursor: pointer; color: var(--gray);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transition: background 0.15s; flex-shrink: 0;
+  }
+  .search-close-btn:hover { background: var(--gray-light); color: var(--black); }
+  .search-results { max-height: 420px; overflow-y: auto; }
+  .search-hit {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px; cursor: pointer; transition: background 0.12s;
+    border-bottom: 1px solid var(--gray-light);
+  }
+  .search-hit:hover { background: var(--cream); }
+  .search-hit:last-child { border-bottom: none; }
+  .search-hit-thumb {
+    width: 48px; height: 48px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; flex-shrink: 0;
+  }
+  .search-hit-info { flex: 1; min-width: 0; }
+  .search-hit-name { font-size: 15px; font-weight: 600; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-hit-sub { font-size: 12px; color: var(--gray); margin-top: 2px; }
+  .search-hit-price { font-size: 16px; font-weight: 700; color: var(--black); flex-shrink: 0; }
+  .search-empty { padding: 36px 20px; text-align: center; color: var(--gray); font-size: 14px; }
+  .search-loading { padding: 36px 20px; text-align: center; color: var(--gray); font-size: 14px; }
+  .search-footer { padding: 10px 20px; border-top: 1px solid var(--gray-light); text-align: right; font-size: 11px; color: var(--gray); }
+
   /* ====== FRANCE THEME ====== */
   [data-theme="france"] {
     --red: #002395;
@@ -613,6 +658,17 @@
   <div class="gate-modal" style="max-width:480px">
     <button class="gate-close" onclick="closeCredentials()" title="Close">✕</button>
     <div id="creds-content"></div>
+  </div>
+</div>
+<div id="search-overlay" class="gate-overlay hidden" style="align-items:flex-start;padding-top:80px;">
+  <div class="search-panel">
+    <div class="search-input-row">
+      <span style="font-size:18px;color:var(--gray)">🔍</span>
+      <input id="search-input" type="text" placeholder="Search products…" autocomplete="off">
+      <button class="search-close-btn" onclick="closeSearch()" title="Close">✕</button>
+    </div>
+    <div id="search-results"></div>
+    <div class="search-footer">Powered by <strong>AB Tasty</strong> Search</div>
   </div>
 </div>
 <div id="app"></div>
@@ -1368,7 +1424,7 @@ function buildNav() {
         <a href="#" onclick="alert('AB Tasty Commerce powers our story personalization!');return false">${T.navStory}</a>
       </div>
       <div class="nav-right">
-        <div class="nav-search"><span>🔍</span> ${T.navSearch}</div>
+        <button class="nav-search" onclick="openSearch()"><span>🔍</span> ${T.navSearch}</button>
         <button class="nav-icon" onclick="alert('${T.addToWishlist} — powered by AB Tasty Commerce recommendations!')">♡</button>
         <button class="nav-icon cart-badge" onclick="navigate('checkout')">
           🛒
@@ -1902,6 +1958,95 @@ function bindEvents() {
     };
   }
 }
+
+// ====== SEARCH ======
+const SEARCH_BASE = 'https://b0ffe524c1c6b488e62b86541f9fd7ec.search.abtasty.com/search';
+let _searchDebounce = null;
+
+function openSearch() {
+  const overlay = document.getElementById('search-overlay');
+  overlay.classList.remove('hidden');
+  overlay.onclick = e => { if (e.target === overlay) closeSearch(); };
+  const inp = document.getElementById('search-input');
+  inp.value = '';
+  document.getElementById('search-results').innerHTML = '';
+  inp.focus();
+}
+
+function closeSearch() {
+  document.getElementById('search-overlay').classList.add('hidden');
+  clearTimeout(_searchDebounce);
+}
+
+function _escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSearch();
+});
+
+async function _doSearch(query) {
+  const resultsEl = document.getElementById('search-results');
+  if (!query.trim()) { resultsEl.innerHTML = ''; return; }
+  resultsEl.innerHTML = '<div class="search-loading">Searching…</div>';
+  try {
+    const res = await fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=8`);
+    if (!res.ok) throw new Error('Search API ' + res.status);
+    const data = await res.json();
+    _renderSearchHits(data.hits || [], query);
+  } catch(e) {
+    console.warn('[Search]', e.message);
+    resultsEl.innerHTML = '<div class="search-empty">Search unavailable — please try again.</div>';
+  }
+}
+
+function _renderSearchHits(hits, query) {
+  const resultsEl = document.getElementById('search-results');
+  if (!hits.length) {
+    resultsEl.innerHTML = `<div class="search-empty">No results for "<strong>${_escHtml(query)}</strong>"</div>`;
+    return;
+  }
+  resultsEl.innerHTML = hits.map(hit => {
+    const local = PRODUCTS.find(p => String(p.id) === String(hit.id));
+    const name     = local?.name     || hit.name  || hit.title || 'Product';
+    const sub      = local?.sub      || hit.sub   || hit.category || '';
+    const price    = local?.price    ?? hit.price;
+    const emoji    = local?.emoji    || hit.emoji || '🛍️';
+    const bg       = local?.thumbBg  || '#F4F1EA';
+    const localId  = local?.id ?? '';
+    const priceStr = price != null ? `$${Number(price).toFixed(0)}` : '';
+    return `<div class="search-hit" data-pid="${_escHtml(String(localId))}">
+      <div class="search-hit-thumb" style="background:${_escHtml(bg)}">${emoji}</div>
+      <div class="search-hit-info">
+        <div class="search-hit-name">${_escHtml(name)}</div>
+        ${sub ? `<div class="search-hit-sub">${_escHtml(sub)}</div>` : ''}
+      </div>
+      ${priceStr ? `<div class="search-hit-price">${_escHtml(priceStr)}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  resultsEl.querySelectorAll('.search-hit').forEach(el => {
+    el.onclick = () => {
+      const pid = parseInt(el.dataset.pid, 10);
+      const product = PRODUCTS.find(p => p.id === pid) || PRODUCTS[0];
+      closeSearch();
+      navigate('product', { product });
+    };
+  });
+}
+
+// Wire up search input — script runs at end of body, DOM already ready
+document.getElementById('search-input').addEventListener('input', e => {
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(() => _doSearch(e.target.value), 300);
+});
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    clearTimeout(_searchDebounce);
+    _doSearch(e.target.value);
+  }
+});
 
 // ====== BOOT ======
 async function boot() {
