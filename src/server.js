@@ -350,6 +350,29 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
+// GET /api/autocomplete — proxy to AB Tasty Autocomplete API (avoids browser CORS restrictions)
+app.get('/api/autocomplete', async (req, res) => {
+  const { text, hitsPerPage } = req.query;
+  if (!text) return res.json({ suggestions: [] });
+
+  const email = visitorEmailMap.get(req.visitorId);
+  const c     = email ? credStore.get(email) : null;
+  const abtId = c?.abtId || null;
+  if (!abtId) return res.json({ suggestions: [] });
+
+  const params = new URLSearchParams({ client_id: abtId, query: text });
+  if (hitsPerPage) params.set('hits_per_page', hitsPerPage);
+
+  try {
+    const upstream = await fetch(`https://search-api.abtasty.com/autocomplete?${params}`);
+    const body = await upstream.json();
+    res.status(upstream.status).json(body);
+  } catch(e) {
+    console.error('[Autocomplete proxy]', e.message);
+    res.json({ suggestions: [] });
+  }
+});
+
 // DELETE /api/credentials — clear everything for this visitor
 app.delete('/api/credentials', (req, res) => {
   const email = visitorEmailMap.get(req.visitorId);

@@ -92,13 +92,15 @@ Footer link opens `#creds-overlay`. Displays all credentials including **AB Tast
 
 ### Search
 
-The nav search bar opens a full-screen overlay (`#search-overlay`) backed by the AB Tasty Search API. Key details:
-- Client calls `GET /api/search?text=<query>&hitsPerPage=8` (proxied server-side to avoid CORS)
-- Server calls `https://search-api.abtasty.com/search?index={abtId}_Catalog&text=...`
+The nav search bar opens a full-screen overlay (`#search-overlay`) backed by the AB Tasty Search and Autocomplete APIs. Key details:
+- **Autocomplete**: as the user types (≥2 chars), `GET /api/autocomplete?text=<query>&hitsPerPage=5` is called at 150ms debounce. Server proxies to `https://search-api.abtasty.com/autocomplete?client_id={abtId}&query=...`. Suggestions appear in `#search-suggestions` below the input; clicking one fills the input and triggers a full search. Suggestions are hidden when full results render, on Enter, or on close.
+- **Full search**: `GET /api/search?text=<query>&hitsPerPage=8` proxied server-side; called at 300ms debounce or on Enter.
+- Server search calls `https://search-api.abtasty.com/search?index={abtId}_Catalog&text=...`
 - Results show product image (`img_link`), title, and price from the AB Tasty catalog
+- Facet filters (chip toggles for list facets, price range inputs for range facets), Keyword/Semantic toggle (`semanticRatio`), and load-more pagination
 - Clicking a result opens the product link in a new tab
-- Debounced 300ms; Escape key closes; backdrop click closes
-- JS: `openSearch()`, `closeSearch()`, `_doSearch()`, `_renderSearchHits()`
+- Escape key closes; backdrop click closes
+- JS: `openSearch()`, `closeSearch()`, `_doSearch()`, `_doAutocomplete()`, `_hideSuggestions()`, `_renderControls()`, `_renderFacets()`, `_renderAccHits()`, `_renderLoadMore()`
 
 ## Adding a New Feature Flag
 
@@ -128,6 +130,7 @@ Whenever a new flag is added to the codebase (in `resolveExperiments` in `server
 | `POST` | `/api/check-theme` | Evaluate `demoTheme` flag with `usertheme` custom variable |
 | `POST` | `/api/setup-flags` | Auto-create VWO flags via REST API |
 | `GET` | `/api/search` | Proxy to AB Tasty Search API (`?text=`, `?hitsPerPage=`, `?page=`) |
+| `GET` | `/api/autocomplete` | Proxy to AB Tasty Autocomplete API (`?text=`, `?hitsPerPage=`) |
 | `GET` | `/vwo-sdk.js` | Serve VWO FME JS SDK |
 | `GET` | `/*` | SPA fallback — serves `public/index.html` |
 

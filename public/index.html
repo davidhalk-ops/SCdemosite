@@ -667,6 +667,14 @@
   .search-empty { padding: 36px 20px; text-align: center; color: var(--gray); font-size: 14px; }
   .search-loading { padding: 36px 20px; text-align: center; color: var(--gray); font-size: 14px; }
   .search-footer { padding: 10px 20px; border-top: 1px solid var(--gray-light); text-align: right; font-size: 11px; color: var(--gray); }
+  .search-suggestions { border-bottom: 1px solid var(--gray-light); }
+  .search-suggestion-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px; cursor: pointer; font-size: 14px;
+    color: var(--black); transition: background 0.1s;
+  }
+  .search-suggestion-item:hover { background: var(--cream); }
+  .search-suggestion-icon { color: var(--gray); font-size: 13px; flex-shrink: 0; }
 
   /* ====== FRANCE THEME ====== */
   [data-theme="france"] {
@@ -710,6 +718,7 @@
       <input id="search-input" type="text" placeholder="Search products…" autocomplete="off">
       <button class="search-close-btn" onclick="closeSearch()" title="Close">✕</button>
     </div>
+    <div id="search-suggestions" class="search-suggestions" style="display:none"></div>
     <div id="search-controls" class="search-controls-row" style="display:none"></div>
     <div id="search-facets" class="search-facets-row" style="display:none"></div>
     <div id="search-results"></div>
@@ -2052,6 +2061,7 @@ const SEARCH_BASE      = '/api/search';
 const SEARCH_EMPTY_MSG = 'Either catalog is empty, or the identifier entered is incorrect.';
 
 let _searchDebounce = null;
+let _autoDebounce   = null;
 let _searchQuery    = '';
 let _semanticRatio  = 0;
 let _activeFilters  = {}; // field → Set<string>
@@ -2067,6 +2077,40 @@ function _escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function _hideSuggestions() {
+  const el = document.getElementById('search-suggestions');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+async function _doAutocomplete(query) {
+  if (!query.trim() || query.length < 2) { _hideSuggestions(); return; }
+  try {
+    const res  = await fetch(`/api/autocomplete?text=${encodeURIComponent(query)}&hitsPerPage=5`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const suggs = data.suggestions || [];
+    if (!suggs.length) { _hideSuggestions(); return; }
+    const el = document.getElementById('search-suggestions');
+    el.style.display = 'block';
+    el.innerHTML = suggs.map(s =>
+      `<div class="search-suggestion-item" data-text="${_escHtml(s.text)}">
+        <span class="search-suggestion-icon">↗</span>
+        <span>${_escHtml(s.text)}</span>
+       </div>`
+    ).join('');
+    el.querySelectorAll('.search-suggestion-item').forEach(item => {
+      item.onclick = () => {
+        const text = item.dataset.text;
+        document.getElementById('search-input').value = text;
+        _hideSuggestions();
+        clearTimeout(_searchDebounce);
+        clearTimeout(_autoDebounce);
+        _doSearch(text);
+      };
+    });
+  } catch(e) { _hideSuggestions(); }
+}
+
 function openSearch() {
   const overlay = document.getElementById('search-overlay');
   overlay.classList.remove('hidden');
@@ -2079,12 +2123,15 @@ function openSearch() {
   document.getElementById('search-controls').style.display      = 'none';
   document.getElementById('search-facets').style.display        = 'none';
   document.getElementById('search-load-more-row').style.display = 'none';
+  _hideSuggestions();
   document.getElementById('search-input').focus();
 }
 
 function closeSearch() {
   document.getElementById('search-overlay').classList.add('hidden');
   clearTimeout(_searchDebounce);
+  clearTimeout(_autoDebounce);
+  _hideSuggestions();
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
@@ -2130,6 +2177,7 @@ async function _doSearch(query, append) {
     _totalPages = data.totalPages || 0;
     if (data.facets && Object.keys(data.facets).length) _lastFacets = data.facets;
     _accHits = append ? [..._accHits, ...(data.hits || [])] : (data.hits || []);
+    _hideSuggestions();
     _renderControls(); _renderFacets(); _renderAccHits(); _renderLoadMore();
   } catch(e) {
     console.warn('[Search]', e.message);
@@ -2229,11 +2277,19 @@ function _renderLoadMore() {
 
 // Wire up search input — script runs at end of body, DOM already ready
 document.getElementById('search-input').addEventListener('input', e => {
+  const val = e.target.value;
   clearTimeout(_searchDebounce);
-  _searchDebounce = setTimeout(() => _doSearch(e.target.value), 300);
+  clearTimeout(_autoDebounce);
+  _autoDebounce   = setTimeout(() => _doAutocomplete(val), 150);
+  _searchDebounce = setTimeout(() => _doSearch(val), 300);
 });
 document.getElementById('search-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { clearTimeout(_searchDebounce); _doSearch(e.target.value); }
+  if (e.key === 'Enter') {
+    clearTimeout(_searchDebounce);
+    clearTimeout(_autoDebounce);
+    _hideSuggestions();
+    _doSearch(e.target.value);
+  }
 });
 
 // ====== LOCAL STORAGE HELPERS ======
