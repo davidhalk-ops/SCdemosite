@@ -2173,11 +2173,8 @@ function buildSearch() {
   </div>`;
 }
 
-const SEARCH_FACET_FIELDS = ['price', 'name', 'option1', 'option2'];
-
 function _buildSearchParams(page) {
   const p = new URLSearchParams({ text: _searchQuery, hitsPerPage: 12, page, semanticRatio: 1 });
-  SEARCH_FACET_FIELDS.forEach(f => p.append('facets[]', f));
   if (_sortBy) p.set('sort', _sortBy);
   Object.entries(_activeFilters).forEach(([field, vals]) => {
     [...vals].forEach(v => p.append(`filters[${field}][]`, v));
