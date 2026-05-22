@@ -2028,6 +2028,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSearch();
 });
 
+const SEARCH_EMPTY_MSG = 'Either catalog is empty, or the identifier entered is incorrect.';
+
 async function _doSearch(query) {
   const resultsEl = document.getElementById('search-results');
   if (!query.trim()) { resultsEl.innerHTML = ''; return; }
@@ -2036,17 +2038,17 @@ async function _doSearch(query) {
     const res = await fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=8`);
     if (!res.ok) throw new Error('Search API ' + res.status);
     const data = await res.json();
-    _renderSearchHits(data.hits || [], query);
+    _renderSearchHits(data.hits || [], data.noIdentifier);
   } catch(e) {
     console.warn('[Search]', e.message);
-    resultsEl.innerHTML = '<div class="search-empty">Search unavailable — please try again.</div>';
+    resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
   }
 }
 
-function _renderSearchHits(hits, query) {
+function _renderSearchHits(hits, noIdentifier) {
   const resultsEl = document.getElementById('search-results');
   if (!hits.length) {
-    resultsEl.innerHTML = `<div class="search-empty">No results for "<strong>${_escHtml(query)}</strong>"</div>`;
+    resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
     return;
   }
   resultsEl.innerHTML = hits.map(hit => {

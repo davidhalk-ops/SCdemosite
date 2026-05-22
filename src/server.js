@@ -334,7 +334,8 @@ app.get('/api/search', async (req, res) => {
 
   const email = visitorEmailMap.get(req.visitorId);
   const c     = email ? credStore.get(email) : null;
-  const abtId = c?.abtId || 'b0ffe524c1c6b488e62b86541f9fd7ec';
+  const abtId = c?.abtId || null;
+  if (!abtId) return res.json({ hits: [], totalHits: 0, totalPages: 0, page: 0, noIdentifier: true });
   params.set('index', `${abtId}_Catalog`);
 
   try {
