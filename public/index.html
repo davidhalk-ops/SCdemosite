@@ -2056,7 +2056,6 @@ const SEARCH_EMPTY_MSG = 'Either catalog is empty, or the identifier entered is 
 
 let _navDebounce   = null;
 let _searchQuery   = '';
-let _semanticRatio = 0;
 let _activeFilters = {}; // field → Set<string>
 let _priceMin      = '';
 let _priceMax      = '';
@@ -2130,7 +2129,7 @@ function _viewAllSearch(query) {
   _searchQuery = query || _searchQuery;
   _activeFilters = {}; _priceMin = ''; _priceMax = '';
   _currentPage = 0; _accHits = []; _lastFacets = {};
-  _totalPages = 0; _totalHits = 0; _semanticRatio = 0;
+  _totalPages = 0; _totalHits = 0;
   _hideNavDropdown();
   navigate('search');
 }
@@ -2166,8 +2165,7 @@ function buildSearch() {
 }
 
 function _buildSearchParams(page) {
-  const p = new URLSearchParams({ text: _searchQuery, hitsPerPage: 12, page });
-  if (_semanticRatio > 0) p.set('semanticRatio', String(_semanticRatio));
+  const p = new URLSearchParams({ text: _searchQuery, hitsPerPage: 12, page, semanticRatio: 1 });
   Object.entries(_activeFilters).forEach(([field, vals]) => {
     [...vals].forEach(v => p.append(`filters[${field}][]`, v));
   });
@@ -2222,14 +2220,7 @@ function _renderControls() {
     <div style="display:flex;align-items:center;gap:10px">
       <span>${_totalHits.toLocaleString()} result${_totalHits !== 1 ? 's' : ''}</span>
       ${clearBtn}
-    </div>
-    <div class="search-semantic-toggle">
-      <button data-ratio="0" class="${_semanticRatio === 0 ? 'active' : ''}">Keyword</button>
-      <button data-ratio="1" class="${_semanticRatio > 0  ? 'active' : ''}">Semantic</button>
     </div>`;
-  el.querySelectorAll('.search-semantic-toggle button').forEach(btn => {
-    btn.onclick = () => { _semanticRatio = Number(btn.dataset.ratio); _doSearch(); };
-  });
   const cfBtn = document.getElementById('search-clear-filters');
   if (cfBtn) cfBtn.onclick = () => { _activeFilters = {}; _priceMin = ''; _priceMax = ''; _doSearch(); };
 }
