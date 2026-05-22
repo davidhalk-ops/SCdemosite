@@ -1269,6 +1269,7 @@ async function handleGateNext() {
         siteConfig.recoToken      = gateState.recoToken;
         siteConfig.abtId          = gateState.abtId;
         siteConfig.theme          = gateState.theme;
+        lsSave({ email: gateState.email, accountId: gateState.accountId, sdkKey: gateState.sdkKey, apiKey: gateState.apiKey, recoId: gateState.recoId, recoToken: gateState.recoToken, abtId: gateState.abtId, theme: gateState.theme });
         applyTheme(gateState.theme || 'canada');
         loadRecosTag(gateState.recoId);
         ABTASTY_RECO_URL = `https://uc-info.eu.abtasty.com/v1/reco/${gateState.recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
@@ -1367,6 +1368,7 @@ async function saveCredentials() {
       siteConfig.recoId    = recoId;
       siteConfig.recoToken = recoToken;
       if (abtId) siteConfig.abtId = abtId;
+      lsSave({ email: siteConfig.email || '', accountId, sdkKey, apiKey: siteConfig.apiKey || '', recoId, recoToken, abtId: siteConfig.abtId || '', theme: siteConfig.theme || '' });
       if (selectedTheme) {
         siteConfig.theme = selectedTheme;
         applyTheme(selectedTheme);
@@ -1391,6 +1393,7 @@ async function saveCredentials() {
 
 async function resetCredentials() {
   if (!confirm('Reset all credentials? You\'ll be prompted to re-enter them on the next page load.')) return;
+  lsClear();
   await fetch('/api/credentials', { method: 'DELETE' });
   window.location.reload();
 }
@@ -2083,10 +2086,37 @@ document.getElementById('search-input').addEventListener('keydown', e => {
   }
 });
 
+// ====== LOCAL STORAGE HELPERS ======
+const LS_KEY = 'tn_creds';
+
+function lsSave(creds) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(creds)); } catch(e) {}
+}
+
+function lsLoad() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e) { return null; }
+}
+
+function lsClear() {
+  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+}
+
 // ====== BOOT ======
 async function boot() {
+  // Restore credentials to server from localStorage (survives server cold starts / restarts)
+  const stored = lsLoad();
+  if (stored?.email) {
+    try {
+      await fetch('/api/credentials', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(stored),
+      });
+    } catch(e) {}
+  }
+
   try {
-    siteConfig = await fetch('/api/config').then(r => r.json());
+    const emailParam = stored?.email ? `?email=${encodeURIComponent(stored.email)}` : '';
+    siteConfig = await fetch(`/api/config${emailParam}`).then(r => r.json());
   } catch(e) {
     siteConfig = { hasCredentials: false };
   }

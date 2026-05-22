@@ -3,6 +3,8 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const { v4: uuidv4 } = require('uuid');
 const crypto        = require('crypto');
+const fs            = require('fs');
+const os            = require('os');
 const path = require('path');
 const { init: vwoInit } = require('vwo-fme-node-sdk');
 
@@ -35,16 +37,19 @@ app.use((req, res, next) => {
 // ─────────────────────────────────────────────
 // Credentials store & encryption
 //
-// VWO API tokens are encrypted at rest with AES-256-GCM.
-// Set ENCRYPTION_KEY=<64-char hex> in .env for persistence
-// across restarts; otherwise an ephemeral key is used and
-// credentials are lost when the server restarts.
+// Credentials are keyed by email address and persisted to disk so
+// they survive server restarts. Sensitive fields (sdkKey, apiKey,
+// recoToken) are encrypted at rest with AES-256-GCM.
+//
+// Set ENCRYPTION_KEY=<64-char hex> in .env — required for decryption
+// to work across restarts. Without it an ephemeral key is generated
+// and any previously-encrypted credentials become unreadable on restart.
 // ─────────────────────────────────────────────
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
   ? Buffer.from(process.env.ENCRYPTION_KEY, 'hex')
   : (() => {
       const k = crypto.randomBytes(32);
-      console.warn('⚠️  No ENCRYPTION_KEY set — using ephemeral key. Credentials lost on restart.');
+      console.warn('⚠️  No ENCRYPTION_KEY set — using ephemeral key. Encrypted credentials unreadable after restart.');
       console.warn(`   To persist, add to .env:  ENCRYPTION_KEY=${k.toString('hex')}`);
       return k;
     })();
@@ -52,7 +57,41 @@ const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
 const VWO_ACCOUNT_ID = process.env.VWO_ACCOUNT_ID || null;
 const VWO_SDK_KEY    = process.env.VWO_SDK_KEY    || null;
 
-const credStore = new Map(); // visitorId → { email, accountId, sdkKey }
+// Persistent file paths — os.tmpdir() is writable on all platforms (including Vercel /tmp)
+const CREDS_FILE   = path.join(os.tmpdir(), 'tn-credentials.json');
+const VEMAP_FILE   = path.join(os.tmpdir(), 'tn-visitor-email.json');
+
+// In-memory stores — hydrated from disk at startup
+const credStore       = new Map(); // email      → { email, accountId, sdkKey(enc), apiKey(enc), recoId, recoToken(enc), abtId, theme }
+const visitorEmailMap = new Map(); // visitorId  → email
+
+function _saveCredStore() {
+  const obj = {};
+  credStore.forEach((v, k) => { obj[k] = v; });
+  try { fs.writeFileSync(CREDS_FILE, JSON.stringify(obj)); } catch(e) {
+    console.warn('[store] Failed to persist credentials:', e.message);
+  }
+}
+
+function _saveVisitorEmailMap() {
+  const obj = {};
+  visitorEmailMap.forEach((v, k) => { obj[k] = v; });
+  try { fs.writeFileSync(VEMAP_FILE, JSON.stringify(obj)); } catch(e) {
+    console.warn('[store] Failed to persist visitor-email map:', e.message);
+  }
+}
+
+// Load from disk on startup
+try {
+  const data = JSON.parse(fs.readFileSync(CREDS_FILE, 'utf8'));
+  Object.entries(data).forEach(([k, v]) => credStore.set(k, v));
+  console.log(`[store] Loaded ${credStore.size} credential record(s) from disk`);
+} catch(e) { /* first run or unreadable */ }
+
+try {
+  const data = JSON.parse(fs.readFileSync(VEMAP_FILE, 'utf8'));
+  Object.entries(data).forEach(([k, v]) => visitorEmailMap.set(k, v));
+} catch(e) { /* first run */ }
 
 // ─────────────────────────────────────────────
 // VWO Feature Experimentation client
@@ -87,6 +126,18 @@ function encrypt(text) {
   return JSON.stringify({ iv: iv.toString('hex'), tag: cipher.getAuthTag().toString('hex'), data: enc.toString('hex') });
 }
 
+function decrypt(stored) {
+  if (!stored) return null;
+  try {
+    const { iv, tag, data } = JSON.parse(stored);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', ENCRYPTION_KEY, Buffer.from(iv, 'hex'));
+    decipher.setAuthTag(Buffer.from(tag, 'hex'));
+    return decipher.update(Buffer.from(data, 'hex'), undefined, 'utf8') + decipher.final('utf8');
+  } catch(e) {
+    return null;
+  }
+}
+
 // GET /api/health — confirms VWO client status (useful for diagnosing serverless cold starts)
 app.get('/api/health', async (req, res) => {
   await vwoReady;
@@ -102,11 +153,30 @@ app.get('/vwo-sdk.js', (req, res) => {
   res.sendFile(path.join(__dirname, '../node_modules/vwo-fme-node-sdk/dist/client/vwo-fme-javascript-sdk.min.js'));
 });
 
-// GET /api/config — returns the visitor's own VWO credentials for client-side SDK init
+// GET /api/config — returns the visitor's own VWO credentials for client-side SDK init.
+// Looks up by visitorId first; falls back to ?email= query param for cross-device / post-restart recovery.
 app.get('/api/config', (req, res) => {
-  const c = credStore.get(req.visitorId);
+  const email = visitorEmailMap.get(req.visitorId) || req.query.email || null;
+  const c     = email ? credStore.get(email) : null;
   if (!c?.sdkKey) return res.json({ hasCredentials: false, visitorId: req.visitorId });
-  res.json({ hasCredentials: true, email: c.email || null, accountId: c.accountId, sdkKey: c.sdkKey, recoId: c.recoId || null, recoToken: c.recoToken || null, abtId: c.abtId || null, theme: c.theme || null, visitorId: req.visitorId });
+
+  // Re-associate this visitor with the email if it came in via query param
+  if (!visitorEmailMap.has(req.visitorId) && email) {
+    visitorEmailMap.set(req.visitorId, email);
+    _saveVisitorEmailMap();
+  }
+
+  res.json({
+    hasCredentials: true,
+    email:     c.email     || null,
+    accountId: c.accountId,
+    sdkKey:    decrypt(c.sdkKey),
+    recoId:    c.recoId    || null,
+    recoToken: c.recoToken ? decrypt(c.recoToken) : null,
+    abtId:     c.abtId     || null,
+    theme:     c.theme     || null,
+    visitorId: req.visitorId,
+  });
 });
 
 // POST /api/verify-email — gate access via VWO SCDemosite flag
@@ -134,22 +204,31 @@ app.post('/api/verify-email', async (req, res) => {
   }
 });
 
-// POST /api/credentials — save the visitor's own VWO account credentials
+// POST /api/credentials — save the visitor's own VWO account credentials.
+// Keyed by email. Sensitive fields are encrypted before writing to the store.
 app.post('/api/credentials', (req, res) => {
   const { email, accountId, sdkKey, apiKey, recoId, recoToken, abtId, theme } = req.body;
   if (!accountId || !sdkKey)
     return res.status(400).json({ error: 'accountId and sdkKey are required' });
-  const existing = credStore.get(req.visitorId) || {};
-  credStore.set(req.visitorId, {
-    email:     email     || existing.email     || null,
+
+  const credEmail = (email || visitorEmailMap.get(req.visitorId) || '').toLowerCase().trim();
+  if (!credEmail) return res.status(400).json({ error: 'email is required' });
+
+  const existing = credStore.get(credEmail) || {};
+  credStore.set(credEmail, {
+    email:     credEmail,
     accountId: String(accountId),
-    sdkKey,
-    apiKey:    apiKey    || existing.apiKey    || null,
-    recoId:    recoId    || existing.recoId    || null,
-    recoToken: recoToken || existing.recoToken || null,
-    abtId:     abtId     || existing.abtId     || null,
-    theme:     theme     || existing.theme     || null,
+    sdkKey:    encrypt(sdkKey),
+    apiKey:    apiKey     ? encrypt(apiKey)    : existing.apiKey    || null,
+    recoId:    recoId     || existing.recoId   || null,
+    recoToken: recoToken  ? encrypt(recoToken) : existing.recoToken || null,
+    abtId:     abtId      || existing.abtId    || null,
+    theme:     theme      || existing.theme    || null,
   });
+
+  visitorEmailMap.set(req.visitorId, credEmail);
+  _saveCredStore();
+  _saveVisitorEmailMap();
   res.json({ ok: true });
 });
 
@@ -185,10 +264,11 @@ app.post('/api/check-theme', async (req, res) => {
 // Checks the visitor's VWO account for the Recommendations flag.
 // If it exists, stops. If not, creates it with 3 string variables (homepage, pdp, cart IDs).
 app.post('/api/setup-flags', async (req, res) => {
-  const c = credStore.get(req.visitorId);
+  const email = visitorEmailMap.get(req.visitorId);
+  const c     = email ? credStore.get(email) : null;
   if (!c?.apiKey) return res.status(400).json({ error: 'No API key stored' });
 
-  const { apiKey } = c;
+  const apiKey = decrypt(c.apiKey);
   const FLAG_KEY = 'recommendations';
   const base    = 'https://app.vwo.com/api/v2/accounts/current';
   const headers = { 'token': apiKey, 'Content-Type': 'application/json' };
@@ -252,7 +332,8 @@ app.get('/api/search', async (req, res) => {
   if (hitsPerPage) params.set('hitsPerPage', hitsPerPage);
   if (page)        params.set('page', page);
 
-  const c = credStore.get(req.visitorId);
+  const email = visitorEmailMap.get(req.visitorId);
+  const c     = email ? credStore.get(email) : null;
   const abtId = c?.abtId || 'b0ffe524c1c6b488e62b86541f9fd7ec';
   params.set('index', `${abtId}_Catalog`);
 
@@ -270,7 +351,13 @@ app.get('/api/search', async (req, res) => {
 
 // DELETE /api/credentials — clear everything for this visitor
 app.delete('/api/credentials', (req, res) => {
-  credStore.delete(req.visitorId);
+  const email = visitorEmailMap.get(req.visitorId);
+  if (email) {
+    credStore.delete(email);
+    _saveCredStore();
+  }
+  visitorEmailMap.delete(req.visitorId);
+  _saveVisitorEmailMap();
   res.json({ ok: true });
 });
 
