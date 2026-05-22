@@ -242,6 +242,29 @@ app.post('/api/setup-flags', async (req, res) => {
   }
 });
 
+// GET /api/search — proxy to AB Tasty Search API (avoids browser CORS restrictions)
+app.get('/api/search', async (req, res) => {
+  const { text, hitsPerPage, page } = req.query;
+  if (!text) return res.status(400).json({ error: 'text required' });
+
+  const params = new URLSearchParams({ text });
+  if (hitsPerPage) params.set('hitsPerPage', hitsPerPage);
+  if (page)        params.set('page', page);
+
+  params.set('index', 'b0ffe524c1c6b488e62b86541f9fd7ec_Catalog');
+
+  try {
+    const upstream = await fetch(
+      `https://search-api.abtasty.com/search?${params}`
+    );
+    const body = await upstream.json();
+    res.status(upstream.status).json(body);
+  } catch(e) {
+    console.error('[Search proxy]', e.message);
+    res.status(502).json({ error: 'Search unavailable', detail: e.message });
+  }
+});
+
 // DELETE /api/credentials — clear everything for this visitor
 app.delete('/api/credentials', (req, res) => {
   credStore.delete(req.visitorId);

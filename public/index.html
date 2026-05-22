@@ -1960,7 +1960,7 @@ function bindEvents() {
 }
 
 // ====== SEARCH ======
-const SEARCH_BASE = 'https://b0ffe524c1c6b488e62b86541f9fd7ec.search.abtasty.com/search';
+const SEARCH_BASE = '/api/search';
 let _searchDebounce = null;
 
 function openSearch() {
@@ -2008,30 +2008,26 @@ function _renderSearchHits(hits, query) {
     return;
   }
   resultsEl.innerHTML = hits.map(hit => {
-    const local = PRODUCTS.find(p => String(p.id) === String(hit.id));
-    const name     = local?.name     || hit.name  || hit.title || 'Product';
-    const sub      = local?.sub      || hit.sub   || hit.category || '';
-    const price    = local?.price    ?? hit.price;
-    const emoji    = local?.emoji    || hit.emoji || '🛍️';
-    const bg       = local?.thumbBg  || '#F4F1EA';
-    const localId  = local?.id ?? '';
-    const priceStr = price != null ? `$${Number(price).toFixed(0)}` : '';
-    return `<div class="search-hit" data-pid="${_escHtml(String(localId))}">
-      <div class="search-hit-thumb" style="background:${_escHtml(bg)}">${emoji}</div>
+    const name     = hit.title || hit.name || 'Product';
+    const price    = hit.price != null ? `$${Number(hit.price).toFixed(0)}` : '';
+    const imgSrc   = hit.img_link || '';
+    const thumb    = imgSrc
+      ? `<img src="${_escHtml(imgSrc)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" loading="lazy" alt="">`
+      : `<span style="font-size:28px">🛍️</span>`;
+    return `<div class="search-hit" data-link="${_escHtml(hit.link || '')}">
+      <div class="search-hit-thumb" style="background:#F4F1EA;overflow:hidden">${thumb}</div>
       <div class="search-hit-info">
         <div class="search-hit-name">${_escHtml(name)}</div>
-        ${sub ? `<div class="search-hit-sub">${_escHtml(sub)}</div>` : ''}
       </div>
-      ${priceStr ? `<div class="search-hit-price">${_escHtml(priceStr)}</div>` : ''}
+      ${price ? `<div class="search-hit-price">${_escHtml(price)}</div>` : ''}
     </div>`;
   }).join('');
 
   resultsEl.querySelectorAll('.search-hit').forEach(el => {
     el.onclick = () => {
-      const pid = parseInt(el.dataset.pid, 10);
-      const product = PRODUCTS.find(p => p.id === pid) || PRODUCTS[0];
       closeSearch();
-      navigate('product', { product });
+      const link = el.dataset.link;
+      if (link) window.open(link, '_blank', 'noopener');
     };
   });
 }
