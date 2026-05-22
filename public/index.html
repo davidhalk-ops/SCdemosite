@@ -2173,8 +2173,6 @@ function buildSearch() {
   </div>`;
 }
 
-const SEARCH_FACET_FIELDS = ['price', 'option1', 'option2'];
-
 function _buildSearchParams(page) {
   const parts = [
     `text=${encodeURIComponent(_searchQuery)}`,
@@ -2183,7 +2181,6 @@ function _buildSearchParams(page) {
     `semanticRatio=1`,
   ];
   if (_sortBy) parts.push(`sort=${encodeURIComponent(_sortBy)}`);
-  SEARCH_FACET_FIELDS.forEach(f => parts.push(`facets[]=${f}`));
 
   // List filters — format: filters[field][]=value  (literal brackets, per API docs)
   Object.entries(_activeFilters).forEach(([field, vals]) => {

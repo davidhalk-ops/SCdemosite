@@ -342,6 +342,7 @@ app.get('/api/search', async (req, res) => {
     const upstream = await fetch(upstreamUrl);
     const body = await upstream.json();
     console.log('[Search proxy] status:', upstream.status, '| response keys:', Object.keys(body), '| facets:', JSON.stringify(body.facets));
+    res.setHeader('Cache-Control', 'no-store');
     res.status(upstream.status).json(body);
   } catch(e) {
     console.error('[Search proxy]', e.message);
