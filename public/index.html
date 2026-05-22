@@ -2173,6 +2173,8 @@ function buildSearch() {
   </div>`;
 }
 
+const SEARCH_FACET_FIELDS = ['price', 'option1', 'option2'];
+
 function _buildSearchParams(page) {
   const parts = [
     `text=${encodeURIComponent(_searchQuery)}`,
@@ -2181,6 +2183,7 @@ function _buildSearchParams(page) {
     `semanticRatio=1`,
   ];
   if (_sortBy) parts.push(`sort=${encodeURIComponent(_sortBy)}`);
+  SEARCH_FACET_FIELDS.forEach(f => parts.push(`facets[]=${f}`));
 
   // List filters — format: filters[field][]=value  (literal brackets, per API docs)
   Object.entries(_activeFilters).forEach(([field, vals]) => {
@@ -2226,7 +2229,9 @@ async function _doSearch(query, append) {
     console.log('[Search] hits:', data.hits?.length, '| facets:', JSON.stringify(data.facets));
     if (data.facets && Object.keys(data.facets).length) _lastFacets = data.facets;
     _accHits = append ? [..._accHits, ...(data.hits || [])] : (data.hits || []);
-    _renderControls(); _renderFacets(); _renderAccHits(); _renderLoadMore();
+    _renderControls();
+    try { _renderFacets(); } catch(fe) { console.warn('[Facets]', fe); }
+    _renderAccHits(); _renderLoadMore();
   } catch(e) {
     console.warn('[Search]', e.message);
     if (!append) resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
