@@ -597,27 +597,44 @@
   .nav-search-wrap input::placeholder { color: var(--gray); }
 
   /* ====== NAV SEARCH DROPDOWN ====== */
+  .search-drop-columns { display: grid; grid-template-columns: 190px 1fr; min-width: 520px; }
+  .search-drop-col { overflow: hidden; }
+  .search-drop-col-left { border-right: 1px solid var(--gray-light); background: var(--cream); }
+  .search-drop-col-header {
+    padding: 10px 16px 8px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px;
+    color: var(--gray); border-bottom: 1px solid var(--gray-light);
+  }
+  .search-drop-suggestion {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 16px; cursor: pointer; transition: background 0.1s;
+    font-size: 13px; color: var(--black);
+    border-bottom: 1px solid var(--gray-light);
+  }
+  .search-drop-suggestion:last-of-type { border-bottom: none; }
+  .search-drop-suggestion:hover { background: var(--gray-light); }
+  .search-drop-suggestion-icon { color: var(--gray); font-size: 12px; flex-shrink: 0; }
   .search-drop-hit {
-    display: flex; align-items: center; gap: 14px;
-    padding: 12px 18px; cursor: pointer; transition: background 0.1s;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; cursor: pointer; transition: background 0.1s;
     border-bottom: 1px solid var(--gray-light);
   }
   .search-drop-hit:hover { background: var(--cream); }
   .search-drop-hit:last-of-type { border-bottom: none; }
   .search-drop-thumb {
-    width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0;
+    width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0;
     background: var(--cream); overflow: hidden;
     display: flex; align-items: center; justify-content: center;
   }
-  .search-drop-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .search-drop-price { font-size: 14px; font-weight: 700; color: var(--black); flex-shrink: 0; }
+  .search-drop-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-drop-price { font-size: 13px; font-weight: 700; color: var(--black); flex-shrink: 0; }
   .search-drop-footer {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 18px; background: var(--cream); border-top: 1px solid var(--gray-light);
+    display: flex; align-items: center; justify-content: flex-end;
+    padding: 10px 16px; background: var(--cream); border-top: 1px solid var(--gray-light);
   }
   .search-drop-view-all {
     background: var(--black); color: white; border: none; border-radius: var(--radius);
-    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
     font-family: var(--font-body); cursor: pointer; transition: opacity 0.15s;
   }
   .search-drop-view-all:hover { opacity: 0.82; }
@@ -2091,42 +2108,67 @@ function _hideNavDropdown() {
   if (dd) dd.style.display = 'none';
 }
 
-function _showNavDropdown(hits, totalHits) {
+function _showNavDropdown(suggestions, hits, totalHits, query) {
   const dd = document.getElementById('nav-search-dropdown');
-  if (!dd || !hits.length) { _hideNavDropdown(); return; }
-  dd.innerHTML = hits.map(hit => {
+  if (!dd || (!suggestions.length && !hits.length)) { _hideNavDropdown(); return; }
+
+  const suggestionsHtml = suggestions.map(s => {
+    const text = s.text || '';
+    return `<div class="search-drop-suggestion" data-query="${_escHtml(text)}">
+      <span class="search-drop-suggestion-icon">🔍</span>${_escHtml(text)}
+    </div>`;
+  }).join('');
+
+  const hitsHtml = hits.map(hit => {
     const name  = hit.title || hit.name || 'Product';
     const price = hit.price != null ? `$${Number(hit.price).toFixed(0)}` : '';
     const img   = hit.img_link
-      ? `<img src="${_escHtml(hit.img_link)}" style="width:44px;height:44px;object-fit:cover" loading="lazy" alt="">`
-      : `<span style="font-size:26px">🛍️</span>`;
+      ? `<img src="${_escHtml(hit.img_link)}" style="width:40px;height:40px;object-fit:cover" loading="lazy" alt="">`
+      : `<span style="font-size:22px">🛍️</span>`;
     return `<div class="search-drop-hit" data-link="${_escHtml(hit.link || '')}">
       <div class="search-drop-thumb">${img}</div>
       <div class="search-drop-name">${_escHtml(name)}</div>
       ${price ? `<div class="search-drop-price">${_escHtml(price)}</div>` : ''}
     </div>`;
-  }).join('') + `
+  }).join('');
+
+  dd.innerHTML = `
+    <div class="search-drop-columns">
+      <div class="search-drop-col search-drop-col-left">
+        <div class="search-drop-col-header">Suggestions</div>
+        ${suggestionsHtml || '<div style="padding:12px 16px;font-size:13px;color:var(--gray)">No suggestions</div>'}
+      </div>
+      <div class="search-drop-col">
+        <div class="search-drop-col-header">Products</div>
+        ${hitsHtml || '<div style="padding:12px 16px;font-size:13px;color:var(--gray)">No products found</div>'}
+      </div>
+    </div>
     <div class="search-drop-footer">
-      <span style="font-size:12px;color:var(--gray)">${totalHits.toLocaleString()} result${totalHits !== 1 ? 's' : ''}</span>
-      <button class="search-drop-view-all" id="search-view-all-btn">View all results →</button>
+      <button class="search-drop-view-all" id="search-view-all-btn">View all results for "${_escHtml(query)}" →</button>
     </div>`;
   _positionDropdown();
   dd.style.display = 'block';
+  dd.querySelectorAll('.search-drop-suggestion').forEach(el => {
+    el.onclick = () => { const q = el.dataset.query; if (q) { _hideNavDropdown(); _viewAllSearch(q); } };
+  });
   dd.querySelectorAll('.search-drop-hit').forEach(el => {
     el.onclick = () => { const l = el.dataset.link; if (l) { _hideNavDropdown(); window.open(l, '_blank', 'noopener'); } };
   });
-  document.getElementById('search-view-all-btn').onclick = () => _viewAllSearch(_searchQuery);
+  document.getElementById('search-view-all-btn').onclick = () => _viewAllSearch(query);
 }
 
 async function _doNavSearch(query) {
   _searchQuery = query;
   if (!query.trim()) { _hideNavDropdown(); return; }
   try {
-    const res  = await fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=5`);
-    if (!res.ok) throw new Error('err');
-    const data = await res.json();
-    if (data.noIdentifier) { _hideNavDropdown(); return; }
-    _showNavDropdown(data.hits || [], data.totalHits || 0);
+    const [acRes, searchRes] = await Promise.all([
+      fetch(`/api/autocomplete?text=${encodeURIComponent(query)}&hitsPerPage=5`),
+      fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=4`),
+    ]);
+    const acData     = acRes.ok     ? await acRes.json()     : { suggestions: [] };
+    const searchData = searchRes.ok ? await searchRes.json() : { hits: [] };
+    if (searchData.noIdentifier) { _hideNavDropdown(); return; }
+    _showNavDropdown(acData.suggestions || [], searchData.hits || [], searchData.totalHits || 0, query);
   } catch(e) { _hideNavDropdown(); }
 }
 
