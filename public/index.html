@@ -629,9 +629,10 @@
   .search-page-query { font-family: var(--font-display); font-size: 36px; font-weight: 700; margin-bottom: 6px; }
   .search-page-query em { color: var(--red); font-style: normal; }
   .search-layout {
-    display: grid; grid-template-columns: 220px 1fr; gap: 40px; align-items: start;
+    display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start;
   }
-  @media (max-width: 700px) { .search-layout { grid-template-columns: 1fr; } }
+  .search-layout.has-filters { grid-template-columns: 220px 1fr; }
+  @media (max-width: 700px) { .search-layout.has-filters { grid-template-columns: 1fr; } }
   .search-sidebar { position: sticky; top: 20px; }
   .search-sidebar-header {
     display: flex; justify-content: space-between; align-items: baseline;
@@ -2261,8 +2262,9 @@ function _renderControls() {
 function _renderFacets() {
   const el = document.getElementById('search-facets');
   if (!el) return;
+  const layout = el.closest('.search-layout');
   const entries = Object.entries(_lastFacets);
-  if (!entries.length) { el.style.display = 'none'; return; }
+  if (!entries.length) { el.style.display = 'none'; layout?.classList.remove('has-filters'); return; }
 
   const activeCount = Object.keys(_activeFilters).length + (_priceMin || _priceMax ? 1 : 0);
   const clearLink = activeCount > 0
@@ -2305,7 +2307,8 @@ function _renderFacets() {
     }
   });
 
-  if (!sectionsHtml) { el.style.display = 'none'; return; }
+  if (!sectionsHtml) { el.style.display = 'none'; layout?.classList.remove('has-filters'); return; }
+  layout?.classList.add('has-filters');
   el.style.display = 'block';
   el.innerHTML = `
     <div class="search-sidebar-header">
