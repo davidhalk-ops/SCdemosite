@@ -363,6 +363,7 @@ app.get('/api/autocomplete', async (req, res) => {
   try {
     const upstream = await fetch(`https://search-api.abtasty.com/autocomplete?${params}`);
     const body = await upstream.json();
+    console.log('[Autocomplete]', `client_id=${abtId}`, `query=${text}`, `status=${upstream.status}`, `suggestions=${JSON.stringify(body).slice(0, 200)}`);
     res.status(upstream.status).json(body);
   } catch(e) {
     console.error('[Autocomplete proxy]', e.message);

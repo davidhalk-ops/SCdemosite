@@ -597,7 +597,7 @@
   .nav-search-wrap input::placeholder { color: var(--gray); }
 
   /* ====== NAV SEARCH DROPDOWN ====== */
-  .search-drop-columns { display: grid; grid-template-columns: 190px 1fr; min-width: 520px; }
+  .search-drop-columns { display: grid; grid-template-columns: 190px 1fr; }
   .search-drop-col { overflow: hidden; }
   .search-drop-col-left { border-right: 1px solid var(--gray-light); background: var(--cream); }
   .search-drop-col-header {
@@ -2100,7 +2100,7 @@ function _positionDropdown() {
   const r = wrap.getBoundingClientRect();
   dd.style.top   = `${r.bottom + 6}px`;
   dd.style.right = `${window.innerWidth - r.right}px`;
-  dd.style.width = `${Math.max(r.width, 380)}px`;
+  dd.style.width = `${Math.max(r.width, 560)}px`;
 }
 
 function _hideNavDropdown() {
@@ -2163,7 +2163,7 @@ async function _doNavSearch(query) {
   try {
     const [acRes, searchRes] = await Promise.all([
       fetch(`/api/autocomplete?text=${encodeURIComponent(query)}&hitsPerPage=5`),
-      fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=4`),
+      fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=3`),
     ]);
     const acData     = acRes.ok     ? await acRes.json()     : { suggestions: [] };
     const searchData = searchRes.ok ? await searchRes.json() : { hits: [] };
