@@ -628,36 +628,34 @@
   }
   .search-page-query { font-family: var(--font-display); font-size: 36px; font-weight: 700; margin-bottom: 6px; }
   .search-page-query em { color: var(--red); font-style: normal; }
-  .search-controls-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0; font-size: 12px; color: var(--gray); margin-bottom: 16px;
-    border-bottom: 1px solid var(--gray-light);
+  .search-layout {
+    display: grid; grid-template-columns: 220px 1fr; gap: 40px; align-items: start;
   }
-  .search-semantic-toggle {
-    display: flex; background: var(--cream); border-radius: 20px;
-    border: 1px solid var(--gray-light); overflow: hidden; flex-shrink: 0;
+  @media (max-width: 700px) { .search-layout { grid-template-columns: 1fr; } }
+  .search-sidebar { position: sticky; top: 20px; }
+  .search-sidebar-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 12px; border-bottom: 2px solid var(--black); margin-bottom: 4px;
   }
-  .search-semantic-toggle button {
-    padding: 5px 14px; font-size: 12px; font-weight: 500; background: transparent;
-    color: var(--gray); border: none; cursor: pointer; font-family: var(--font-body);
-    transition: all 0.15s; white-space: nowrap;
+  .search-sidebar-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+  .search-facet-section details { border-bottom: 1px solid var(--gray-light); }
+  .search-facet-section details summary {
+    list-style: none; display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 0; font-size: 13px; font-weight: 600; cursor: pointer;
+    user-select: none; color: var(--black); font-family: var(--font-body);
   }
-  .search-semantic-toggle button.active { background: var(--black); color: white; border-radius: 20px; }
-  .search-facets-row {
-    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-    padding: 14px 0; margin-bottom: 28px;
-    border-bottom: 1px solid var(--gray-light);
-  }
-  .search-facet-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .search-facet-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); flex-shrink: 0; }
+  .search-facet-section details summary::-webkit-details-marker { display: none; }
+  .search-facet-chevron { font-size: 10px; color: var(--gray); transition: transform 0.18s; }
+  .search-facet-section details[open] .search-facet-chevron { transform: rotate(180deg); }
+  .search-facet-body { padding: 4px 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
   .search-facet-chip {
-    padding: 5px 12px; border-radius: 20px; font-size: 12px;
+    padding: 4px 11px; border-radius: 20px; font-size: 12px;
     border: 1.5px solid var(--gray-light); background: white; cursor: pointer;
     font-family: var(--font-body); transition: all 0.12s; color: var(--black);
   }
   .search-facet-chip:hover { border-color: var(--gray); }
   .search-facet-chip.active { background: var(--black); color: white; border-color: var(--black); }
-  .search-range-inputs { display: flex; align-items: center; gap: 6px; }
+  .search-range-inputs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 4px; }
   .search-range-inputs input {
     width: 72px; padding: 5px 9px; border: 1.5px solid var(--gray-light);
     border-radius: var(--radius); font-size: 12px; font-family: var(--font-body); color: var(--black);
@@ -666,6 +664,11 @@
   .search-range-btn {
     padding: 5px 12px; background: var(--black); color: white; border: none;
     border-radius: var(--radius); font-size: 12px; cursor: pointer; font-family: var(--font-body);
+  }
+  .search-controls-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; font-size: 12px; color: var(--gray); margin-bottom: 16px;
+    border-bottom: 1px solid var(--gray-light);
   }
   .search-empty { padding: 80px 0; text-align: center; color: var(--gray); font-size: 15px; }
   .search-loading { padding: 80px 0; text-align: center; color: var(--gray); font-size: 14px; }
@@ -2154,12 +2157,16 @@ function buildSearch() {
   </div>
   <div class="section">
     <div class="container">
-      <div id="search-controls" class="search-controls-row" style="display:none"></div>
-      <div id="search-facets" class="search-facets-row" style="display:none"></div>
-      <div id="search-results"><div class="search-loading">Searching…</div></div>
-      <div id="search-load-more-row" style="display:none;padding:32px 0;text-align:center"></div>
-      <div style="padding:20px 0;border-top:1px solid var(--gray-light);text-align:right;font-size:11px;color:var(--gray);margin-top:16px">
-        Powered by <strong>Wingify Commerce</strong> Search
+      <div class="search-layout">
+        <aside id="search-facets" class="search-sidebar" style="display:none"></aside>
+        <div>
+          <div id="search-controls" class="search-controls-row" style="display:none"></div>
+          <div id="search-results"><div class="search-loading">Searching…</div></div>
+          <div id="search-load-more-row" style="display:none;padding:32px 0;text-align:center"></div>
+          <div style="padding:20px 0;border-top:1px solid var(--gray-light);text-align:right;font-size:11px;color:var(--gray);margin-top:16px">
+            Powered by <strong>Wingify Commerce</strong> Search
+          </div>
+        </div>
       </div>
     </div>
   </div>`;
@@ -2256,30 +2263,60 @@ function _renderFacets() {
   if (!el) return;
   const entries = Object.entries(_lastFacets);
   if (!entries.length) { el.style.display = 'none'; return; }
-  let html = '';
+
+  const activeCount = Object.keys(_activeFilters).length + (_priceMin || _priceMax ? 1 : 0);
+  const clearLink = activeCount > 0
+    ? `<button id="sidebar-clear" style="font-size:11px;background:none;border:none;color:var(--red);cursor:pointer;padding:0;font-family:var(--font-body);text-decoration:underline;text-underline-offset:2px">Clear all</button>`
+    : '';
+
+  let sectionsHtml = '';
   entries.forEach(([field, facet]) => {
     const type = facet?.type, values = facet?.values;
+    const label = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
+    const hasActive = !!_activeFilters[field] || (field === 'price' && (_priceMin || _priceMax));
+
     if (type === 'list' && Array.isArray(values) && values.length) {
-      const label = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
-      const chips = values.slice(0, 8).map(([val, count]) => {
+      const chips = values.map(([val, count]) => {
         const on = _activeFilters[field]?.has(String(val));
         return `<button class="search-facet-chip${on ? ' active' : ''}" data-field="${_escHtml(field)}" data-val="${_escHtml(String(val))}">${_escHtml(String(val))} <span style="opacity:0.5;font-size:11px">${count}</span></button>`;
       }).join('');
-      html += `<div class="search-facet-group"><span class="search-facet-label">${_escHtml(label)}</span>${chips}</div>`;
+      sectionsHtml += `
+        <div class="search-facet-section">
+          <details${hasActive ? ' open' : ' open'}>
+            <summary>${_escHtml(label)}${hasActive ? ' <span style="color:var(--red);font-size:11px">●</span>' : ''}<span class="search-facet-chevron">▼</span></summary>
+            <div class="search-facet-body">${chips}</div>
+          </details>
+        </div>`;
     } else if (type === 'range' && values && 'min' in values) {
-      const priceActive = _priceMin !== '' || _priceMax !== '';
-      html += `<div class="search-facet-group"><span class="search-facet-label">Price${priceActive ? ' ✓' : ''}</span>
-        <div class="search-range-inputs">
-          <input id="facet-price-min" type="number" placeholder="${Math.floor(values.min)}" value="${_escHtml(_priceMin)}">
-          <span style="color:var(--gray)">–</span>
-          <input id="facet-price-max" type="number" placeholder="${Math.ceil(values.max)}" value="${_escHtml(_priceMax)}">
-          <button class="search-range-btn" id="facet-price-go">Apply</button>
-        </div></div>`;
+      sectionsHtml += `
+        <div class="search-facet-section">
+          <details${hasActive ? ' open' : ' open'}>
+            <summary>${_escHtml(label)}${hasActive ? ' <span style="color:var(--red);font-size:11px">●</span>' : ''}<span class="search-facet-chevron">▼</span></summary>
+            <div class="search-facet-body">
+              <div class="search-range-inputs">
+                <input id="facet-price-min" type="number" placeholder="${Math.floor(values.min)}" value="${_escHtml(_priceMin)}">
+                <span style="color:var(--gray)">–</span>
+                <input id="facet-price-max" type="number" placeholder="${Math.ceil(values.max)}" value="${_escHtml(_priceMax)}">
+                <button class="search-range-btn" id="facet-price-go">Apply</button>
+              </div>
+            </div>
+          </details>
+        </div>`;
     }
   });
-  if (!html) { el.style.display = 'none'; return; }
-  el.style.display = 'flex';
-  el.innerHTML = html;
+
+  if (!sectionsHtml) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="search-sidebar-header">
+      <span class="search-sidebar-title">Filters</span>
+      ${clearLink}
+    </div>
+    ${sectionsHtml}`;
+
+  document.getElementById('sidebar-clear')?.addEventListener('click', () => {
+    _activeFilters = {}; _priceMin = ''; _priceMax = ''; _doSearch();
+  });
   el.querySelectorAll('.search-facet-chip').forEach(chip => {
     chip.onclick = () => {
       const { field, val } = chip.dataset;
