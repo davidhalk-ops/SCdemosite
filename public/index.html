@@ -604,7 +604,45 @@
     font-size: 14px; transition: background 0.15s; flex-shrink: 0;
   }
   .search-close-btn:hover { background: var(--gray-light); color: var(--black); }
-  .search-results { max-height: 420px; overflow-y: auto; }
+  .search-controls-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 20px; border-bottom: 1px solid var(--gray-light);
+    font-size: 12px; color: var(--gray);
+  }
+  .search-semantic-toggle {
+    display: flex; background: var(--cream); border-radius: 20px;
+    border: 1px solid var(--gray-light); overflow: hidden; flex-shrink: 0;
+  }
+  .search-semantic-toggle button {
+    padding: 5px 14px; font-size: 12px; font-weight: 500; background: transparent;
+    color: var(--gray); border: none; cursor: pointer; font-family: var(--font-body);
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .search-semantic-toggle button.active { background: var(--black); color: white; border-radius: 20px; }
+  .search-facets-row {
+    padding: 10px 20px; border-bottom: 1px solid var(--gray-light);
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  }
+  .search-facet-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .search-facet-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); flex-shrink: 0; }
+  .search-facet-chip {
+    padding: 4px 10px; border-radius: 20px; font-size: 12px;
+    border: 1.5px solid var(--gray-light); background: white; cursor: pointer;
+    font-family: var(--font-body); transition: all 0.12s; color: var(--black);
+  }
+  .search-facet-chip:hover { border-color: var(--gray); }
+  .search-facet-chip.active { background: var(--black); color: white; border-color: var(--black); }
+  .search-range-inputs { display: flex; align-items: center; gap: 6px; }
+  .search-range-inputs input {
+    width: 68px; padding: 4px 8px; border: 1.5px solid var(--gray-light);
+    border-radius: var(--radius); font-size: 12px; font-family: var(--font-body); color: var(--black);
+  }
+  .search-range-inputs input:focus { outline: none; border-color: var(--black); }
+  .search-range-btn {
+    padding: 4px 10px; background: var(--black); color: white; border: none;
+    border-radius: var(--radius); font-size: 12px; cursor: pointer; font-family: var(--font-body);
+  }
+  .search-results { max-height: 360px; overflow-y: auto; }
   .search-hit {
     display: flex; align-items: center; gap: 14px;
     padding: 14px 20px; cursor: pointer; transition: background 0.12s;
@@ -619,8 +657,13 @@
   }
   .search-hit-info { flex: 1; min-width: 0; }
   .search-hit-name { font-size: 15px; font-weight: 600; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .search-hit-sub { font-size: 12px; color: var(--gray); margin-top: 2px; }
   .search-hit-price { font-size: 16px; font-weight: 700; color: var(--black); flex-shrink: 0; }
+  .search-load-more-btn {
+    width: 100%; padding: 12px; background: transparent; color: var(--gray);
+    border: 1.5px solid var(--gray-light); border-radius: var(--radius); font-size: 13px;
+    font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: all 0.15s;
+  }
+  .search-load-more-btn:hover { border-color: var(--gray); color: var(--black); }
   .search-empty { padding: 36px 20px; text-align: center; color: var(--gray); font-size: 14px; }
   .search-loading { padding: 36px 20px; text-align: center; color: var(--gray); font-size: 14px; }
   .search-footer { padding: 10px 20px; border-top: 1px solid var(--gray-light); text-align: right; font-size: 11px; color: var(--gray); }
@@ -667,7 +710,10 @@
       <input id="search-input" type="text" placeholder="Search products…" autocomplete="off">
       <button class="search-close-btn" onclick="closeSearch()" title="Close">✕</button>
     </div>
+    <div id="search-controls" class="search-controls-row" style="display:none"></div>
+    <div id="search-facets" class="search-facets-row" style="display:none"></div>
     <div id="search-results"></div>
+    <div id="search-load-more-row" style="display:none;padding:12px 20px;border-top:1px solid var(--gray-light)"></div>
     <div class="search-footer">Powered by <strong>AB Tasty</strong> Search</div>
   </div>
 </div>
@@ -2002,17 +2048,38 @@ function bindEvents() {
 }
 
 // ====== SEARCH ======
-const SEARCH_BASE = '/api/search';
+const SEARCH_BASE      = '/api/search';
+const SEARCH_EMPTY_MSG = 'Either catalog is empty, or the identifier entered is incorrect.';
+
 let _searchDebounce = null;
+let _searchQuery    = '';
+let _semanticRatio  = 0;
+let _activeFilters  = {}; // field → Set<string>
+let _priceMin       = '';
+let _priceMax       = '';
+let _currentPage    = 0;
+let _accHits        = [];
+let _lastFacets     = {};
+let _totalPages     = 0;
+let _totalHits      = 0;
+
+function _escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 function openSearch() {
   const overlay = document.getElementById('search-overlay');
   overlay.classList.remove('hidden');
   overlay.onclick = e => { if (e.target === overlay) closeSearch(); };
-  const inp = document.getElementById('search-input');
-  inp.value = '';
+  _searchQuery = ''; _semanticRatio = 0; _activeFilters = {};
+  _priceMin = ''; _priceMax = ''; _currentPage = 0; _accHits = [];
+  _lastFacets = {}; _totalPages = 0; _totalHits = 0;
+  document.getElementById('search-input').value = '';
   document.getElementById('search-results').innerHTML = '';
-  inp.focus();
+  document.getElementById('search-controls').style.display      = 'none';
+  document.getElementById('search-facets').style.display        = 'none';
+  document.getElementById('search-load-more-row').style.display = 'none';
+  document.getElementById('search-input').focus();
 }
 
 function closeSearch() {
@@ -2020,60 +2087,144 @@ function closeSearch() {
   clearTimeout(_searchDebounce);
 }
 
-function _escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+
+function _buildSearchParams(page) {
+  const p = new URLSearchParams({ text: _searchQuery, hitsPerPage: 8, page });
+  if (_semanticRatio > 0) p.set('semanticRatio', String(_semanticRatio));
+  Object.entries(_activeFilters).forEach(([field, vals]) => {
+    [...vals].forEach(v => p.append(`filters[${field}][]`, v));
+  });
+  let ri = 0;
+  if (_priceMin !== '') { p.append(`filters[price][${ri}][operator]`, '>='); p.append(`filters[price][${ri++}][value]`, _priceMin); }
+  if (_priceMax !== '') { p.append(`filters[price][${ri}][operator]`, '<='); p.append(`filters[price][${ri}][value]`,   _priceMax); }
+  return p;
 }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeSearch();
-});
-
-const SEARCH_EMPTY_MSG = 'Either catalog is empty, or the identifier entered is incorrect.';
-
-async function _doSearch(query) {
+async function _doSearch(query, append) {
+  if (query !== undefined) _searchQuery = query;
   const resultsEl = document.getElementById('search-results');
-  if (!query.trim()) { resultsEl.innerHTML = ''; return; }
-  resultsEl.innerHTML = '<div class="search-loading">Searching…</div>';
-  try {
-    const res = await fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=8`);
-    if (!res.ok) throw new Error('Search API ' + res.status);
-    const data = await res.json();
-    _renderSearchHits(data.hits || [], data.noIdentifier);
-  } catch(e) {
-    console.warn('[Search]', e.message);
-    resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
-  }
-}
-
-function _renderSearchHits(hits, noIdentifier) {
-  const resultsEl = document.getElementById('search-results');
-  if (!hits.length) {
-    resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
+  if (!_searchQuery.trim()) {
+    resultsEl.innerHTML = '';
+    ['search-controls','search-facets','search-load-more-row'].forEach(id => document.getElementById(id).style.display = 'none');
+    _accHits = [];
     return;
   }
-  resultsEl.innerHTML = hits.map(hit => {
-    const name     = hit.title || hit.name || 'Product';
-    const price    = hit.price != null ? `$${Number(hit.price).toFixed(0)}` : '';
-    const imgSrc   = hit.img_link || '';
-    const thumb    = imgSrc
-      ? `<img src="${_escHtml(imgSrc)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" loading="lazy" alt="">`
-      : `<span style="font-size:28px">🛍️</span>`;
-    return `<div class="search-hit" data-link="${_escHtml(hit.link || '')}">
-      <div class="search-hit-thumb" style="background:#F4F1EA;overflow:hidden">${thumb}</div>
-      <div class="search-hit-info">
-        <div class="search-hit-name">${_escHtml(name)}</div>
-      </div>
-      ${price ? `<div class="search-hit-price">${_escHtml(price)}</div>` : ''}
-    </div>`;
-  }).join('');
+  if (!append) {
+    _currentPage = 0; _accHits = [];
+    resultsEl.innerHTML = '<div class="search-loading">Searching…</div>';
+  } else {
+    document.getElementById('search-load-more-row').innerHTML =
+      '<div style="text-align:center;padding:8px;color:var(--gray);font-size:13px">Loading…</div>';
+  }
+  try {
+    const res  = await fetch(`${SEARCH_BASE}?${_buildSearchParams(_currentPage)}`);
+    if (!res.ok) throw new Error('Search API ' + res.status);
+    const data = await res.json();
+    if (data.noIdentifier) {
+      resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
+      ['search-controls','search-facets','search-load-more-row'].forEach(id => document.getElementById(id).style.display = 'none');
+      return;
+    }
+    _totalHits  = data.totalHits  || 0;
+    _totalPages = data.totalPages || 0;
+    if (data.facets && Object.keys(data.facets).length) _lastFacets = data.facets;
+    _accHits = append ? [..._accHits, ...(data.hits || [])] : (data.hits || []);
+    _renderControls(); _renderFacets(); _renderAccHits(); _renderLoadMore();
+  } catch(e) {
+    console.warn('[Search]', e.message);
+    if (!append) resultsEl.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`;
+    document.getElementById('search-load-more-row').style.display = 'none';
+  }
+}
 
-  resultsEl.querySelectorAll('.search-hit').forEach(el => {
-    el.onclick = () => {
-      closeSearch();
-      const link = el.dataset.link;
-      if (link) window.open(link, '_blank', 'noopener');
+function _renderControls() {
+  const el = document.getElementById('search-controls');
+  el.style.display = 'flex';
+  el.innerHTML = `
+    <span>${_totalHits.toLocaleString()} result${_totalHits !== 1 ? 's' : ''}</span>
+    <div class="search-semantic-toggle">
+      <button data-ratio="0" class="${_semanticRatio === 0 ? 'active' : ''}">Keyword</button>
+      <button data-ratio="1" class="${_semanticRatio > 0  ? 'active' : ''}">Semantic</button>
+    </div>`;
+  el.querySelectorAll('.search-semantic-toggle button').forEach(btn => {
+    btn.onclick = () => { _semanticRatio = Number(btn.dataset.ratio); _doSearch(); };
+  });
+}
+
+function _renderFacets() {
+  const el      = document.getElementById('search-facets');
+  const entries = Object.entries(_lastFacets);
+  if (!entries.length) { el.style.display = 'none'; return; }
+  let html = '';
+  entries.forEach(([field, data]) => {
+    if (Array.isArray(data) && data.length) {
+      const label = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g,' ');
+      const chips = data.slice(0,7).map(([val, count]) => {
+        const on = _activeFilters[field]?.has(String(val));
+        return `<button class="search-facet-chip${on?' active':''}" data-field="${_escHtml(field)}" data-val="${_escHtml(String(val))}">${_escHtml(String(val))} <span style="opacity:0.55">${count}</span></button>`;
+      }).join('');
+      html += `<div class="search-facet-group"><span class="search-facet-label">${_escHtml(label)}</span>${chips}</div>`;
+    } else if (data && typeof data === 'object' && 'min' in data) {
+      html += `<div class="search-facet-group"><span class="search-facet-label">Price</span>
+        <div class="search-range-inputs">
+          <input id="facet-price-min" type="number" placeholder="${Math.floor(data.min)}" value="${_escHtml(_priceMin)}">
+          <span style="color:var(--gray)">–</span>
+          <input id="facet-price-max" type="number" placeholder="${Math.ceil(data.max)}"  value="${_escHtml(_priceMax)}">
+          <button class="search-range-btn" id="facet-price-go">Go</button>
+        </div></div>`;
+    }
+  });
+  if (!html) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = html;
+  el.querySelectorAll('.search-facet-chip').forEach(chip => {
+    chip.onclick = () => {
+      const { field, val } = chip.dataset;
+      if (!_activeFilters[field]) _activeFilters[field] = new Set();
+      if (_activeFilters[field].has(val)) { _activeFilters[field].delete(val); if (!_activeFilters[field].size) delete _activeFilters[field]; }
+      else _activeFilters[field].add(val);
+      _doSearch();
     };
   });
+  const go = document.getElementById('facet-price-go');
+  if (go) go.onclick = () => {
+    _priceMin = document.getElementById('facet-price-min').value || '';
+    _priceMax = document.getElementById('facet-price-max').value || '';
+    _doSearch();
+  };
+}
+
+function _renderAccHits() {
+  const el = document.getElementById('search-results');
+  if (!_accHits.length) { el.innerHTML = `<div class="search-empty">${SEARCH_EMPTY_MSG}</div>`; return; }
+  el.innerHTML = _accHits.map(hit => {
+    const name  = hit.title || hit.name || 'Product';
+    const price = hit.price != null ? `$${Number(hit.price).toFixed(0)}` : '';
+    const thumb = hit.img_link
+      ? `<img src="${_escHtml(hit.img_link)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" loading="lazy" alt="">`
+      : `<span style="font-size:28px">🛍️</span>`;
+    return `<div class="search-hit" data-link="${_escHtml(hit.link||'')}">
+      <div class="search-hit-thumb" style="background:#F4F1EA;overflow:hidden">${thumb}</div>
+      <div class="search-hit-info"><div class="search-hit-name">${_escHtml(name)}</div></div>
+      ${price?`<div class="search-hit-price">${_escHtml(price)}</div>`:''}
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.search-hit').forEach(h => {
+    h.onclick = () => { const l = h.dataset.link; if (l) { closeSearch(); window.open(l,'_blank','noopener'); } };
+  });
+}
+
+function _renderLoadMore() {
+  const el = document.getElementById('search-load-more-row');
+  if (_currentPage < _totalPages - 1) {
+    const rem = _totalHits - _accHits.length;
+    el.style.display = 'block';
+    el.innerHTML = `<button class="search-load-more-btn">Load ${Math.min(rem,8)} more <span style="opacity:0.6">(${rem} remaining)</span></button>`;
+    el.querySelector('button').onclick = () => { _currentPage++; _doSearch(undefined, true); };
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 // Wire up search input — script runs at end of body, DOM already ready
@@ -2082,10 +2233,7 @@ document.getElementById('search-input').addEventListener('input', e => {
   _searchDebounce = setTimeout(() => _doSearch(e.target.value), 300);
 });
 document.getElementById('search-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    clearTimeout(_searchDebounce);
-    _doSearch(e.target.value);
-  }
+  if (e.key === 'Enter') { clearTimeout(_searchDebounce); _doSearch(e.target.value); }
 });
 
 // ====== LOCAL STORAGE HELPERS ======
