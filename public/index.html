@@ -2059,6 +2059,7 @@ let _searchQuery   = '';
 let _activeFilters = {}; // field → Set<string>
 let _priceMin      = '';
 let _priceMax      = '';
+let _sortBy        = '';
 let _currentPage   = 0;
 let _accHits       = [];
 let _lastFacets    = {};
@@ -2127,7 +2128,7 @@ async function _doNavSearch(query) {
 
 function _viewAllSearch(query) {
   _searchQuery = query || _searchQuery;
-  _activeFilters = {}; _priceMin = ''; _priceMax = '';
+  _activeFilters = {}; _priceMin = ''; _priceMax = ''; _sortBy = '';
   _currentPage = 0; _accHits = []; _lastFacets = {};
   _totalPages = 0; _totalHits = 0;
   _hideNavDropdown();
@@ -2164,8 +2165,12 @@ function buildSearch() {
   </div>`;
 }
 
+const SEARCH_FACET_FIELDS = ['price', 'name', 'option1', 'option2'];
+
 function _buildSearchParams(page) {
   const p = new URLSearchParams({ text: _searchQuery, hitsPerPage: 12, page, semanticRatio: 1 });
+  SEARCH_FACET_FIELDS.forEach(f => p.append('facets[]', f));
+  if (_sortBy) p.set('sort', _sortBy);
   Object.entries(_activeFilters).forEach(([field, vals]) => {
     [...vals].forEach(v => p.append(`filters[${field}][]`, v));
   });
@@ -2208,6 +2213,14 @@ async function _doSearch(query, append) {
   }
 }
 
+const SORT_OPTIONS = [
+  { value: '',           label: 'Relevance' },
+  { value: 'price:asc',  label: 'Price: Low to High' },
+  { value: 'price:desc', label: 'Price: High to Low' },
+  { value: 'name:asc',   label: 'Name: A–Z' },
+  { value: 'name:desc',  label: 'Name: Z–A' },
+];
+
 function _renderControls() {
   const el = document.getElementById('search-controls');
   if (!el) return;
@@ -2216,13 +2229,26 @@ function _renderControls() {
   const clearBtn = activeCount > 0
     ? `<button id="search-clear-filters" style="font-size:12px;background:none;border:none;color:var(--red);cursor:pointer;padding:0;font-family:var(--font-body);text-decoration:underline;text-underline-offset:2px">Clear ${activeCount} filter${activeCount > 1 ? 's' : ''}</button>`
     : '';
+  const sortOpts = SORT_OPTIONS.map(o =>
+    `<option value="${o.value}"${_sortBy === o.value ? ' selected' : ''}>${o.label}</option>`
+  ).join('');
   el.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px">
       <span>${_totalHits.toLocaleString()} result${_totalHits !== 1 ? 's' : ''}</span>
       ${clearBtn}
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label for="search-sort" style="font-size:12px;color:var(--gray);white-space:nowrap">Sort by</label>
+      <select id="search-sort" style="font-size:13px;font-family:var(--font-body);border:1px solid var(--gray-light);border-radius:6px;padding:4px 8px;background:white;cursor:pointer;color:var(--black)">${sortOpts}</select>
     </div>`;
   const cfBtn = document.getElementById('search-clear-filters');
   if (cfBtn) cfBtn.onclick = () => { _activeFilters = {}; _priceMin = ''; _priceMax = ''; _doSearch(); };
+  const sortSel = document.getElementById('search-sort');
+  if (sortSel) sortSel.onchange = () => {
+    _sortBy = sortSel.value;
+    _currentPage = 0; _accHits = [];
+    _doSearch();
+  };
 }
 
 function _renderFacets() {
