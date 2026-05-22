@@ -325,23 +325,21 @@ app.post('/api/setup-flags', async (req, res) => {
 
 // GET /api/search — proxy to Wingify Commerce Search API (avoids browser CORS restrictions)
 app.get('/api/search', async (req, res) => {
-  const { text, hitsPerPage, page } = req.query;
+  const { text } = req.query;
   if (!text) return res.status(400).json({ error: 'text required' });
-
-  const params = new URLSearchParams({ text });
-  if (hitsPerPage) params.set('hitsPerPage', hitsPerPage);
-  if (page)        params.set('page', page);
 
   const email = visitorEmailMap.get(req.visitorId);
   const c     = email ? credStore.get(email) : null;
   const abtId = c?.abtId || null;
   if (!abtId) return res.json({ hits: [], totalHits: 0, totalPages: 0, page: 0, noIdentifier: true });
+
+  // Forward all query params from the client (text, hitsPerPage, page, semanticRatio, filters[...])
+  // then inject the index param derived from the visitor's stored abtId
+  const params = new URLSearchParams(req.query);
   params.set('index', `${abtId}_Catalog`);
 
   try {
-    const upstream = await fetch(
-      `https://search-api.abtasty.com/search?${params}`
-    );
+    const upstream = await fetch(`https://search-api.abtasty.com/search?${params}`);
     const body = await upstream.json();
     res.status(upstream.status).json(body);
   } catch(e) {

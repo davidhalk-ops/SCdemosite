@@ -2189,8 +2189,15 @@ async function _doSearch(query, append) {
 function _renderControls() {
   const el = document.getElementById('search-controls');
   el.style.display = 'flex';
+  const activeCount = Object.keys(_activeFilters).length + (_priceMin || _priceMax ? 1 : 0);
+  const clearBtn = activeCount > 0
+    ? `<button id="search-clear-filters" style="font-size:12px;background:none;border:none;color:var(--red);cursor:pointer;padding:0;font-family:var(--font-body);text-decoration:underline;text-underline-offset:2px">Clear ${activeCount} filter${activeCount > 1 ? 's' : ''}</button>`
+    : '';
   el.innerHTML = `
-    <span>${_totalHits.toLocaleString()} result${_totalHits !== 1 ? 's' : ''}</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span>${_totalHits.toLocaleString()} result${_totalHits !== 1 ? 's' : ''}</span>
+      ${clearBtn}
+    </div>
     <div class="search-semantic-toggle">
       <button data-ratio="0" class="${_semanticRatio === 0 ? 'active' : ''}">Keyword</button>
       <button data-ratio="1" class="${_semanticRatio > 0  ? 'active' : ''}">Semantic</button>
@@ -2198,6 +2205,10 @@ function _renderControls() {
   el.querySelectorAll('.search-semantic-toggle button').forEach(btn => {
     btn.onclick = () => { _semanticRatio = Number(btn.dataset.ratio); _doSearch(); };
   });
+  const clearFiltersBtn = document.getElementById('search-clear-filters');
+  if (clearFiltersBtn) {
+    clearFiltersBtn.onclick = () => { _activeFilters = {}; _priceMin = ''; _priceMax = ''; _doSearch(); };
+  }
 }
 
 function _renderFacets() {
@@ -2205,21 +2216,25 @@ function _renderFacets() {
   const entries = Object.entries(_lastFacets);
   if (!entries.length) { el.style.display = 'none'; return; }
   let html = '';
-  entries.forEach(([field, data]) => {
-    if (Array.isArray(data) && data.length) {
-      const label = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g,' ');
-      const chips = data.slice(0,7).map(([val, count]) => {
+  entries.forEach(([field, facet]) => {
+    // API response shape: { type: 'list'|'range', values: [...] | {min,max} }
+    const type   = facet?.type;
+    const values = facet?.values;
+    if (type === 'list' && Array.isArray(values) && values.length) {
+      const label = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
+      const chips = values.slice(0, 8).map(([val, count]) => {
         const on = _activeFilters[field]?.has(String(val));
-        return `<button class="search-facet-chip${on?' active':''}" data-field="${_escHtml(field)}" data-val="${_escHtml(String(val))}">${_escHtml(String(val))} <span style="opacity:0.55">${count}</span></button>`;
+        return `<button class="search-facet-chip${on ? ' active' : ''}" data-field="${_escHtml(field)}" data-val="${_escHtml(String(val))}">${_escHtml(String(val))} <span style="opacity:0.5;font-size:11px">${count}</span></button>`;
       }).join('');
       html += `<div class="search-facet-group"><span class="search-facet-label">${_escHtml(label)}</span>${chips}</div>`;
-    } else if (data && typeof data === 'object' && 'min' in data) {
-      html += `<div class="search-facet-group"><span class="search-facet-label">Price</span>
+    } else if (type === 'range' && values && 'min' in values) {
+      const priceActive = _priceMin !== '' || _priceMax !== '';
+      html += `<div class="search-facet-group"><span class="search-facet-label">Price${priceActive ? ' ✓' : ''}</span>
         <div class="search-range-inputs">
-          <input id="facet-price-min" type="number" placeholder="${Math.floor(data.min)}" value="${_escHtml(_priceMin)}">
+          <input id="facet-price-min" type="number" placeholder="${Math.floor(values.min)}" value="${_escHtml(_priceMin)}">
           <span style="color:var(--gray)">–</span>
-          <input id="facet-price-max" type="number" placeholder="${Math.ceil(data.max)}"  value="${_escHtml(_priceMax)}">
-          <button class="search-range-btn" id="facet-price-go">Go</button>
+          <input id="facet-price-max" type="number" placeholder="${Math.ceil(values.max)}" value="${_escHtml(_priceMax)}">
+          <button class="search-range-btn" id="facet-price-go">Apply</button>
         </div></div>`;
     }
   });
@@ -2230,8 +2245,12 @@ function _renderFacets() {
     chip.onclick = () => {
       const { field, val } = chip.dataset;
       if (!_activeFilters[field]) _activeFilters[field] = new Set();
-      if (_activeFilters[field].has(val)) { _activeFilters[field].delete(val); if (!_activeFilters[field].size) delete _activeFilters[field]; }
-      else _activeFilters[field].add(val);
+      if (_activeFilters[field].has(val)) {
+        _activeFilters[field].delete(val);
+        if (!_activeFilters[field].size) delete _activeFilters[field];
+      } else {
+        _activeFilters[field].add(val);
+      }
       _doSearch();
     };
   });
@@ -2241,6 +2260,10 @@ function _renderFacets() {
     _priceMax = document.getElementById('facet-price-max').value || '';
     _doSearch();
   };
+  const minInput = document.getElementById('facet-price-min');
+  const maxInput = document.getElementById('facet-price-max');
+  if (minInput) minInput.addEventListener('keydown', e => { if (e.key === 'Enter') go?.click(); });
+  if (maxInput) maxInput.addEventListener('keydown', e => { if (e.key === 'Enter') go?.click(); });
 }
 
 function _renderAccHits() {
