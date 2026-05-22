@@ -2298,7 +2298,7 @@ function _renderFacets() {
       }).join('');
       sectionsHtml += `
         <div class="search-facet-section">
-          <details${hasActive ? ' open' : ''}>
+          <details open>
             <summary>${_escHtml(label)}${hasActive ? ' <span style="color:var(--red);font-size:11px">●</span>' : ''}<span class="search-facet-chevron">▼</span></summary>
             <div class="search-facet-body">${chips}</div>
           </details>
@@ -2306,7 +2306,7 @@ function _renderFacets() {
     } else if (type === 'range' && values && 'min' in values) {
       sectionsHtml += `
         <div class="search-facet-section">
-          <details${hasActive ? ' open' : ''}>
+          <details open>
             <summary>${_escHtml(label)}${hasActive ? ' <span style="color:var(--red);font-size:11px">●</span>' : ''}<span class="search-facet-chevron">▼</span></summary>
             <div class="search-facet-body">
               <div class="search-range-inputs">
