@@ -2173,36 +2173,32 @@ function buildSearch() {
   </div>`;
 }
 
-const SEARCH_FACET_FIELDS = ['price', 'option1', 'option2'];
-
 function _buildSearchParams(page) {
-  // Base params (URLSearchParams encodes brackets as %5B%5D which the API rejects,
-  // so bracketed params are appended manually as raw strings below)
-  const base = new URLSearchParams({ text: _searchQuery, hitsPerPage: 12, page, semanticRatio: 1 });
-  if (_sortBy) base.set('sort', _sortBy);
+  const parts = [
+    `text=${encodeURIComponent(_searchQuery)}`,
+    `hitsPerPage=12`,
+    `page=${page}`,
+    `semanticRatio=1`,
+  ];
+  if (_sortBy) parts.push(`sort=${encodeURIComponent(_sortBy)}`);
 
-  const extras = [];
-
-  // Facet fields — literal brackets required
-  SEARCH_FACET_FIELDS.forEach(f => extras.push(`facets[]=${encodeURIComponent(f)}`));
-
-  // Active list filters
+  // List filters — format: filters[field][]=value  (literal brackets, per API docs)
   Object.entries(_activeFilters).forEach(([field, vals]) => {
-    [...vals].forEach(v => extras.push(`filters[${field}][]=${encodeURIComponent(v)}`));
+    [...vals].forEach(v => parts.push(`filters[${field}][]=${encodeURIComponent(v)}`));
   });
 
-  // Price range filters
+  // Price range filters — format: filters[price][0][operator]=>=&filters[price][0][value]=10
   let ri = 0;
   if (_priceMin !== '') {
-    extras.push(`filters[price][${ri}][operator]=%3E%3D`);
-    extras.push(`filters[price][${ri++}][value]=${encodeURIComponent(_priceMin)}`);
+    parts.push(`filters[price][${ri}][operator]=%3E%3D`);
+    parts.push(`filters[price][${ri++}][value]=${encodeURIComponent(_priceMin)}`);
   }
   if (_priceMax !== '') {
-    extras.push(`filters[price][${ri}][operator]=%3C%3D`);
-    extras.push(`filters[price][${ri}][value]=${encodeURIComponent(_priceMax)}`);
+    parts.push(`filters[price][${ri}][operator]=%3C%3D`);
+    parts.push(`filters[price][${ri}][value]=${encodeURIComponent(_priceMax)}`);
   }
 
-  return base.toString() + (extras.length ? '&' + extras.join('&') : '');
+  return parts.join('&');
 }
 
 async function _doSearch(query, append) {
