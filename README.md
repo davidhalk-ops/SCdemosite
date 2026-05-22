@@ -1,4 +1,4 @@
-# 🍁 True North — AB Tasty Commerce Demo
+# 🍁 True North — Wingify Commerce Demo
 
 A Canadian-themed mock ecommerce store with a Node/Express backend,
 ready for server-side feature experimentation.

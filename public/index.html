@@ -6,7 +6,7 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>True North — Powered by AB Tasty Commerce</title>
+<title>True North — Powered by Wingify Commerce</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -723,7 +723,7 @@
     <div id="search-facets" class="search-facets-row" style="display:none"></div>
     <div id="search-results"></div>
     <div id="search-load-more-row" style="display:none;padding:12px 20px;border-top:1px solid var(--gray-light)"></div>
-    <div class="search-footer">Powered by <strong>AB Tasty</strong> Search</div>
+    <div class="search-footer">Powered by <strong>Wingify Commerce</strong> Search</div>
   </div>
 </div>
 <div id="app"></div>
@@ -888,7 +888,7 @@ function applyTheme(theme) {
   if (!theme || !THEME_CONTENT[theme]) return;
   currentTheme = theme;
   document.documentElement.setAttribute('data-theme', theme);
-  document.title = `${THEME_CONTENT[theme].storeName} — Powered by AB Tasty Commerce`;
+  document.title = `${THEME_CONTENT[theme].storeName} — Powered by Wingify Commerce`;
 }
 
 // ====== SITE CONFIG (populated by boot) ======
@@ -957,7 +957,7 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
     if (staticSec) staticSec.style.display = 'none';
   }
   section.querySelector('[data-reco-title]').textContent = getCarouselTitle(variableKey);
-  section.querySelector('[data-reco-badge]').textContent = 'AB Tasty Commerce — Recommendations';
+  section.querySelector('[data-reco-badge]').textContent = 'Wingify Commerce — Recommendations';
   section.style.display = '';
 
   const showPlaceholder = () => {
@@ -992,7 +992,7 @@ function buildFlaggedRecoSection(sectionId, gridId) {
   <div class="recs-section" id="${sectionId}" style="display:none">
     <div class="container">
       <div class="recs-header">
-        <div class="abt-badge"><span class="dot"></span> <span data-reco-badge>AB Tasty Commerce</span></div>
+        <div class="abt-badge"><span class="dot"></span> <span data-reco-badge>Wingify Commerce</span></div>
         <h2 data-reco-title>Recommendations</h2>
       </div>
       <div class="reco-placeholder" data-reco-placeholder style="display:none">${T.recoPlaceholder}</div>
@@ -1168,18 +1168,18 @@ function buildGateHTML() {
       inputId: 'gate-api-key', type: 'password', placeholder: '••••••••••••••••',
       value: gateState.apiKey },
     { key: 'reco-id', num: 4,
-      title: 'AB Tasty Commerce Site ID',
-      hint: 'Your AB Tasty Commerce site ID. This is injected into the recommendations tag loaded in the page head and used to power the product carousels with your catalogue.',
+      title: 'Wingify Commerce Site ID',
+      hint: 'Your Wingify Commerce site ID. This is injected into the recommendations tag loaded in the page head and used to power the product carousels with your catalogue.',
       inputId: 'gate-reco-id', type: 'text', placeholder: 'e.g. 1120',
       value: gateState.recoId },
     { key: 'reco-token', num: 5,
-      title: 'AB Tasty Commerce API Key',
-      hint: 'Your AB Tasty Commerce API key. Used to authenticate product recommendation requests on the homepage, product page, and cart.',
+      title: 'Wingify Commerce API Key',
+      hint: 'Your Wingify Commerce API key. Used to authenticate product recommendation requests on the homepage, product page, and cart.',
       inputId: 'gate-reco-token', type: 'password', placeholder: '••••••••••••••••',
       value: gateState.recoToken },
     { key: 'abt-id', num: 6,
-      title: 'AB Tasty Identifier',
-      hint: 'Your AB Tasty identifier — the same one used for your Web Experimentation implementation. This powers the Search and product discovery features in the demo.',
+      title: 'Wingify Identifier',
+      hint: 'Your Wingify identifier — the same one used for your Web Experimentation implementation. This powers the Search and product discovery features in the demo.',
       inputId: 'gate-abt-id', type: 'text', placeholder: 'e.g. b0ffe524c1c6b488e62b86541f9fd7ec',
       value: gateState.abtId },
   ];
@@ -1374,15 +1374,15 @@ function openCredentials() {
       <input id="cred-api-key" type="password" value="${siteConfig.apiKey || ''}" autocomplete="off">
     </div>
     <div class="creds-field">
-      <label>AB Tasty Commerce Site ID</label>
+      <label>Wingify Commerce Site ID</label>
       <input id="cred-reco-id" type="text" value="${siteConfig.recoId || ''}" autocomplete="off">
     </div>
     <div class="creds-field">
-      <label>AB Tasty Commerce API Key</label>
+      <label>Wingify Commerce API Key</label>
       <input id="cred-reco-token" type="password" value="${siteConfig.recoToken || ''}" autocomplete="off">
     </div>
     <div class="creds-field">
-      <label>AB Tasty Identifier</label>
+      <label>Wingify Identifier</label>
       <input id="cred-abt-id" type="text" value="${siteConfig.abtId || ''}" autocomplete="off">
     </div>
     <button class="creds-save-btn" id="creds-save-btn" onclick="saveCredentials()">Save Changes</button>
@@ -1518,11 +1518,11 @@ function buildNav() {
         <a href="#" class="${state.page==='home'?'active':''}" onclick="navigate('home');return false">${T.navHome}</a>
         <a href="#" onclick="navigate('collection',{collection:COLLECTIONS[0]});return false">${T.navShop}</a>
         <a href="#" onclick="navigate('collection',{collection:COLLECTIONS[5]});return false">${T.navSale}</a>
-        <a href="#" onclick="alert('AB Tasty Commerce powers our story personalization!');return false">${T.navStory}</a>
+        <a href="#" onclick="alert('Wingify Commerce powers our story personalization!');return false">${T.navStory}</a>
       </div>
       <div class="nav-right">
         <button class="nav-search" onclick="openSearch()"><span>🔍</span> ${T.navSearch}</button>
-        <button class="nav-icon" onclick="alert('${T.addToWishlist} — powered by AB Tasty Commerce recommendations!')">♡</button>
+        <button class="nav-icon" onclick="alert('${T.addToWishlist} — powered by Wingify Commerce recommendations!')">♡</button>
         <button class="nav-icon cart-badge" onclick="navigate('checkout')">
           🛒
           ${cartCount > 0 ? `<span class="badge">${cartCount}</span>` : ''}
@@ -1565,7 +1565,7 @@ function buildHome() {
     <div class="container">
       <div class="section-header">
         <div>
-          <div class="abt-badge"><span class="dot"></span> AB Tasty Commerce — Featured Products</div>
+          <div class="abt-badge"><span class="dot"></span> Wingify Commerce — Featured Products</div>
           <h2>${T.trendingTitle}</h2>
         </div>
         <div style="display:flex;align-items:center;gap:16px">
@@ -1671,7 +1671,7 @@ function buildCollectionPage() {
   return `
   <div class="collection-header">
     <div class="container">
-      <div class="abt-badge" style="margin:0 auto 14px"><span class="dot"></span> AB Tasty Commerce — Smart Search & Merch</div>
+      <div class="abt-badge" style="margin:0 auto 14px"><span class="dot"></span> Wingify Commerce — Smart Search & Merch</div>
       <h1>${tc.emoji || c.emoji} ${tc.name || c.name}</h1>
       <p>${tc.desc || c.desc}</p>
     </div>
@@ -1765,7 +1765,7 @@ function buildPDP() {
     <div class="container">
       <div class="section-header">
         <div>
-          <div class="abt-badge"><span class="dot"></span> AB Tasty Commerce — Recommendations</div>
+          <div class="abt-badge"><span class="dot"></span> Wingify Commerce — Recommendations</div>
           <h2>${T.pdpStaticRecoTitle}</h2>
         </div>
         <div class="trending-nav">
@@ -1893,7 +1893,7 @@ function buildCheckout() {
     <div class="container">
       <div class="section-header">
         <div>
-          <div class="abt-badge"><span class="dot"></span> AB Tasty Commerce — Recommendations</div>
+          <div class="abt-badge"><span class="dot"></span> Wingify Commerce — Recommendations</div>
           <h2>${T.cartStaticRecoTitle}</h2>
         </div>
         <div class="trending-nav">
@@ -1955,7 +1955,7 @@ function buildFooter() {
       <div style="display:flex;align-items:center;gap:14px">
         <button class="footer-manage-link" onclick="openCredentials()">Manage Credentials</button>
         <div class="abt-powered">
-          Powered by <strong>AB Tasty Commerce</strong> — Search · Merch · Recommendations
+          Powered by <strong>Wingify Commerce</strong> — Search · Merch · Recommendations
         </div>
       </div>
     </div>

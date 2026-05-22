@@ -323,7 +323,7 @@ app.post('/api/setup-flags', async (req, res) => {
   }
 });
 
-// GET /api/search — proxy to AB Tasty Search API (avoids browser CORS restrictions)
+// GET /api/search — proxy to Wingify Commerce Search API (avoids browser CORS restrictions)
 app.get('/api/search', async (req, res) => {
   const { text, hitsPerPage, page } = req.query;
   if (!text) return res.status(400).json({ error: 'text required' });
@@ -350,7 +350,7 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
-// GET /api/autocomplete — proxy to AB Tasty Autocomplete API (avoids browser CORS restrictions)
+// GET /api/autocomplete — proxy to Wingify Commerce Autocomplete API (avoids browser CORS restrictions)
 app.get('/api/autocomplete', async (req, res) => {
   const { text, hitsPerPage } = req.query;
   if (!text) return res.json({ suggestions: [] });

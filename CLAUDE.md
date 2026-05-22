@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**True North** is a Canadian-themed mock ecommerce store used as a demo platform for server-side feature experimentation with VWO (Visual Website Optimizer) Feature Management & Experimentation (FME), and AB Tasty Commerce (Search, Recommendations). It demonstrates zero-flicker A/B testing via server-side experiment resolution.
+**True North** is a Canadian-themed mock ecommerce store used as a demo platform for server-side feature experimentation with VWO (Visual Website Optimizer) Feature Management & Experimentation (FME), and Wingify Commerce (Search, Recommendations). It demonstrates zero-flicker A/B testing via server-side experiment resolution.
 
 ## Commands
 
@@ -45,7 +45,7 @@ Express REST API with server-side experiment resolution. Key flows:
 
 3. **Deterministic Fallback** — If the VWO SDK is unavailable, a simple string hash maps visitor IDs to buckets 0–99 for consistent assignment without VWO.
 
-4. **Credential Store** — Visitors store their own VWO + AB Tasty credentials during onboarding. Credentials are:
+4. **Credential Store** — Visitors store their own VWO + Wingify Commerce credentials during onboarding. Credentials are:
    - **Keyed by email address** (not by cookie/visitorId) so the same user is recognised across browsers and server restarts.
    - **Encrypted at rest**: `sdkKey`, `apiKey`, and `recoToken` are AES-256-GCM encrypted before writing; decrypted transparently on read.
    - **Persisted to disk** in two JSON files in `os.tmpdir()` (`tn-credentials.json`, `tn-visitor-email.json`), loaded on startup.
@@ -57,7 +57,7 @@ Express REST API with server-side experiment resolution. Key flows:
 
 6. **Theme Selection** — `POST /api/check-theme` evaluates the `demoTheme` flag using the server-side VWO client (`.env` credentials). Called during onboarding with a `usertheme` custom variable (`"canada"` or `"france"`). Returns `{ theme, isEnabled }` and logs both values server-side.
 
-7. **AB Tasty Search Proxy** — `GET /api/search` proxies to `https://search-api.abtasty.com/search` to avoid browser CORS restrictions. Uses the visitor's stored `abtId` credential as the index (`{abtId}_Catalog`); falls back to a demo identifier if not set.
+7. **Wingify Commerce Search Proxy** — `GET /api/search` proxies to `https://search-api.abtasty.com/search` to avoid browser CORS restrictions. Uses the visitor's stored `abtId` credential as the index (`{abtId}_Catalog`); falls back to a demo identifier if not set.
 
 8. **Products & Collections** — Static data in `src/data.js` (8 products, 6 collections). `GET /api/products` supports `?category=` and `?limit=` filters.
 
@@ -80,23 +80,23 @@ Single-file SPA (HTML + inline CSS + inline JS). No bundler or framework. The fr
 | `account-id` | VWO Account ID | Client-side SDK init |
 | `sdk-key` | Feature Experimentation SDK Key | Client-side SDK init |
 | `api-key` | VWO API Key | Used server-side by `/api/setup-flags` only; never returned by `/api/config`. Has note + Skip button |
-| `reco-id` | AB Tasty Commerce Site ID | Stored as `recoId` |
-| `reco-token` | AB Tasty Commerce API Key | Stored as `recoToken` |
-| `abt-id` | AB Tasty Identifier | Same identifier used for Web Experimentation. Powers Search. Stored as `abtId`. Final step — triggers credential save and flag setup |
+| `reco-id` | Wingify Commerce Site ID | Stored as `recoId` |
+| `reco-token` | Wingify Commerce API Key | Stored as `recoToken` |
+| `abt-id` | Wingify Identifier | Same identifier used for Web Experimentation. Powers Search. Stored as `abtId`. Final step — triggers credential save and flag setup |
 
 After the final step, `siteConfig` is updated in-memory and credentials are saved to `localStorage`.
 
 ### Manage Credentials Panel
 
-Footer link opens `#creds-overlay`. Displays all credentials including **AB Tasty Identifier** and **VWO Authorization Key** (password field). The VWO API Key is intentionally not returned by `GET /api/config`. Saving updates both the server store and `localStorage`.
+Footer link opens `#creds-overlay`. Displays all credentials including **Wingify Identifier** and **VWO Authorization Key** (password field). The VWO API Key is intentionally not returned by `GET /api/config`. Saving updates both the server store and `localStorage`.
 
 ### Search
 
-The nav search bar opens a full-screen overlay (`#search-overlay`) backed by the AB Tasty Search and Autocomplete APIs. Key details:
+The nav search bar opens a full-screen overlay (`#search-overlay`) backed by the Wingify Commerce Search and Autocomplete APIs. Key details:
 - **Autocomplete**: as the user types (≥2 chars), `GET /api/autocomplete?text=<query>&hitsPerPage=5` is called at 150ms debounce. Server proxies to `https://search-api.abtasty.com/autocomplete?client_id={abtId}&query=...`. Suggestions appear in `#search-suggestions` below the input; clicking one fills the input and triggers a full search. Suggestions are hidden when full results render, on Enter, or on close.
 - **Full search**: `GET /api/search?text=<query>&hitsPerPage=8` proxied server-side; called at 300ms debounce or on Enter.
 - Server search calls `https://search-api.abtasty.com/search?index={abtId}_Catalog&text=...`
-- Results show product image (`img_link`), title, and price from the AB Tasty catalog
+- Results show product image (`img_link`), title, and price from the Wingify Commerce catalog
 - Facet filters (chip toggles for list facets, price range inputs for range facets), Keyword/Semantic toggle (`semanticRatio`), and load-more pagination
 - Clicking a result opens the product link in a new tab
 - Escape key closes; backdrop click closes
@@ -129,7 +129,7 @@ Whenever a new flag is added to the codebase (in `resolveExperiments` in `server
 | `POST` | `/api/verify-email` | Gate access via VWO `scDemoSite` flag |
 | `POST` | `/api/check-theme` | Evaluate `demoTheme` flag with `usertheme` custom variable |
 | `POST` | `/api/setup-flags` | Auto-create VWO flags via REST API |
-| `GET` | `/api/search` | Proxy to AB Tasty Search API (`?text=`, `?hitsPerPage=`, `?page=`) |
+| `GET` | `/api/search` | Proxy to Wingify Commerce Search API (`?text=`, `?hitsPerPage=`, `?page=`) |
 | `GET` | `/api/autocomplete` | Proxy to AB Tasty Autocomplete API (`?text=`, `?hitsPerPage=`) |
 | `GET` | `/vwo-sdk.js` | Serve VWO FME JS SDK |
 | `GET` | `/*` | SPA fallback — serves `public/index.html` |

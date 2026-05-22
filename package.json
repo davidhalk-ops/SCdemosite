@@ -1,7 +1,7 @@
 {
   "name": "truenorth-store",
   "version": "1.0.0",
-  "description": "True North ecommerce demo — AB Tasty Commerce",
+  "description": "True North ecommerce demo — Wingify Commerce",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
