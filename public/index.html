@@ -2075,8 +2075,8 @@ function bindEvents() {
 const SEARCH_BASE      = '/api/search';
 const SEARCH_EMPTY_MSG = 'Either catalog is empty, or the identifier entered is incorrect.';
 
-let _navDebounce       = null;
-let _navToken          = 0;
+let _navDebounce        = null;
+let _navAbort           = null;
 let _navDropSuggestions = [];
 let _navDropHits        = [];
 let _navDropTotalHits   = 0;
@@ -2164,7 +2164,12 @@ function _showNavDropdown(suggestions, hits, totalHits, query) {
 function _doNavSearch(query) {
   _searchQuery = query;
   if (!query.trim()) { _hideNavDropdown(); return; }
-  const token = ++_navToken;
+
+  // Cancel any in-flight requests from the previous keystroke
+  if (_navAbort) _navAbort.abort();
+  _navAbort = new AbortController();
+  const { signal } = _navAbort;
+
   _navDropSuggestions = [];
   _navDropHits        = [];
   _navDropTotalHits   = 0;
@@ -2172,27 +2177,23 @@ function _doNavSearch(query) {
   // Suggestions — renders its column as soon as it arrives
   (async () => {
     try {
-      const res = await fetch(`/api/autocomplete?text=${encodeURIComponent(query)}&hitsPerPage=5`);
-      if (token !== _navToken) return;
+      const res = await fetch(`/api/autocomplete?text=${encodeURIComponent(query)}&hitsPerPage=5`, { signal });
       const data = res.ok ? await res.json() : {};
-      if (token !== _navToken) return;
       _navDropSuggestions = data.suggestions || [];
       _showNavDropdown(_navDropSuggestions, _navDropHits, _navDropTotalHits, query);
-    } catch(e) {}
+    } catch(e) { if (e.name !== 'AbortError') _hideNavDropdown(); }
   })();
 
   // Product hits — renders its column as soon as it arrives
   (async () => {
     try {
-      const res = await fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=3`);
-      if (token !== _navToken) return;
+      const res = await fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=3`, { signal });
       const data = res.ok ? await res.json() : {};
-      if (token !== _navToken) return;
       if (data.noIdentifier) { _hideNavDropdown(); return; }
-      _navDropHits      = data.hits        || [];
-      _navDropTotalHits = data.totalHits   || 0;
+      _navDropHits      = data.hits      || [];
+      _navDropTotalHits = data.totalHits || 0;
       _showNavDropdown(_navDropSuggestions, _navDropHits, _navDropTotalHits, query);
-    } catch(e) {}
+    } catch(e) { if (e.name !== 'AbortError') _hideNavDropdown(); }
   })();
 }
 
