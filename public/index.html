@@ -2076,6 +2076,7 @@ const SEARCH_BASE      = '/api/search';
 const SEARCH_EMPTY_MSG = 'Either catalog is empty, or the identifier entered is incorrect.';
 
 let _navDebounce   = null;
+let _navToken      = 0;
 let _searchQuery   = '';
 let _activeFilters = {}; // field → Set<string>
 let _priceMin      = '';
@@ -2160,16 +2161,19 @@ function _showNavDropdown(suggestions, hits, totalHits, query) {
 async function _doNavSearch(query) {
   _searchQuery = query;
   if (!query.trim()) { _hideNavDropdown(); return; }
+  const token = ++_navToken;
   try {
     const [acRes, searchRes] = await Promise.all([
       fetch(`/api/autocomplete?text=${encodeURIComponent(query)}&hitsPerPage=5`),
       fetch(`${SEARCH_BASE}?text=${encodeURIComponent(query)}&hitsPerPage=3`),
     ]);
+    if (token !== _navToken) return; // superseded by a newer keystroke
     const acData     = acRes.ok     ? await acRes.json()     : { suggestions: [] };
     const searchData = searchRes.ok ? await searchRes.json() : { hits: [] };
+    if (token !== _navToken) return;
     if (searchData.noIdentifier) { _hideNavDropdown(); return; }
     _showNavDropdown(acData.suggestions || [], searchData.hits || [], searchData.totalHits || 0, query);
-  } catch(e) { _hideNavDropdown(); }
+  } catch(e) { if (token === _navToken) _hideNavDropdown(); }
 }
 
 function _viewAllSearch(query) {
