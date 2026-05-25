@@ -51,7 +51,10 @@ Express REST API with server-side experiment resolution. Key flows:
    - **Keyed by email address** (not by cookie/visitorId) so the same user is recognised across browsers and server restarts.
    - **Encrypted at rest**: `sdkKey`, `apiKey`, and `recoToken` are AES-256-GCM encrypted before writing; decrypted transparently on read.
    - **Persisted to disk** in two JSON files in `os.tmpdir()` (`tn-credentials.json`, `tn-visitor-email.json`), loaded on startup.
-   - **Mirrored to `localStorage`** (`tn_creds`) on the client. On every page load, `boot()` silently restores credentials from `localStorage` to the server via `POST /api/credentials` before fetching `/api/config`, so the gate is never shown again after initial setup — even after a Vercel cold start.
+   - **Mirrored to Upstash Redis** (keys `creds:{email}` and `vemap:{visitorId}`) as the shared persistent store across all Vercel serverless instances. `GET /api/config` and `POST /api/verify-email` check Redis when credentials are not found in the instance-local memory store.
+   - **httpOnly cookie** (`tn_creds`, 1-year) set by the server on `POST /api/credentials` with plaintext credentials. Cookie restore middleware re-populates the in-memory store on cold starts without a Redis call, covering the same-browser case. Cookie is cleared on `DELETE /api/credentials`.
+   - **Email-restore shortcut** — `POST /api/verify-email` returns `hasCredentials: true` when Redis has credentials for that email. The gate immediately fetches `GET /api/config?email=...` and skips all remaining steps, hiding the gate without re-entry.
+   - `boot()` on the client calls `GET /api/config` directly (no localStorage read or silent POST needed).
    - The `visitorId` cookie is still used for VWO experiment bucketing, but credential lookup goes email → credentials.
    - `apiKey` (VWO REST API key) is never returned by `GET /api/config`.
 
@@ -84,13 +87,13 @@ Single-file SPA (HTML + inline CSS + inline JS). No bundler or framework. The fr
 | `api-key` | VWO API Key | Used server-side by `/api/setup-flags` only; never returned by `/api/config`. Has note + Skip button |
 | `reco-id` | Wingify Commerce Site ID | Stored as `recoId` |
 | `reco-token` | Wingify Commerce API Key | Stored as `recoToken` |
-| `abt-id` | Wingify Identifier | Same identifier used for Web Experimentation. Powers Search. Stored as `abtId`. Final step — triggers credential save and flag setup |
+| `abt-id` | Wingify Commerce Identifier | Same identifier used for Web Experimentation. Powers Search. Stored as `abtId`. Final step — triggers credential save and flag setup |
 
-After the final step, `siteConfig` is updated in-memory and credentials are saved to `localStorage`.
+After the final step, `siteConfig` is updated in-memory, credentials are saved to the server store (disk + Redis), and the `tn_creds` httpOnly cookie is set.
 
 ### Manage Credentials Panel
 
-Footer link opens `#creds-overlay`. Displays all credentials including **Wingify Identifier** and **VWO Authorization Key** (password field). The VWO API Key is intentionally not returned by `GET /api/config`. Saving updates both the server store and `localStorage`.
+Footer link opens `#creds-overlay`. Displays all credentials including **Wingify Commerce Identifier** and **VWO Authorization Key** (password field). The VWO API Key is intentionally not returned by `GET /api/config`. Saving updates the server store (disk + Redis) and refreshes the `tn_creds` httpOnly cookie.
 
 ### Search
 
@@ -151,4 +154,4 @@ Sensitive fields encrypted: `sdkKey`, `apiKey`, `recoToken`. Non-sensitive field
 
 Cipher: AES-256-GCM. Functions: `encrypt(text)` → JSON string `{ iv, tag, data }`; `decrypt(stored)` → plaintext or `null` on failure.
 
-`ENCRYPTION_KEY` must be stable across restarts for decryption to work. Without it, a new ephemeral key is generated each cold start — `localStorage` restore still works (the server re-encrypts with the new key on the next `POST /api/credentials`), but any records written in a previous warm instance become unreadable.
+`ENCRYPTION_KEY` must be **identical across all environments** (local, Preview, Production) because Upstash Redis is shared. If the key differs between environments, credentials written by one instance cannot be decrypted by another. Without it, a new ephemeral key is generated each cold start — same-browser cookie restore re-encrypts on the next `POST /api/credentials`, but Redis records from a previous key become unreadable.
