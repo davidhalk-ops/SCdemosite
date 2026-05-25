@@ -6,6 +6,7 @@ const crypto        = require('crypto');
 const fs            = require('fs');
 const os            = require('os');
 const path = require('path');
+const { Redis } = require('@upstash/redis');
 const { init: vwoInit } = require('vwo-fme-node-sdk');
 
 const app = express();
@@ -31,6 +32,32 @@ app.use((req, res, next) => {
     });
   }
   req.visitorId = visitorId;
+  next();
+});
+
+// Restore credentials from tn_creds cookie when in-memory store is cold (Vercel cold start, etc.)
+app.use((req, res, next) => {
+  const raw = req.cookies.tn_creds;
+  if (!raw) return next();
+  try {
+    const c = JSON.parse(raw);
+    if (!c?.email) return next();
+    if (!visitorEmailMap.has(req.visitorId)) {
+      visitorEmailMap.set(req.visitorId, c.email);
+    }
+    if (!credStore.has(c.email)) {
+      credStore.set(c.email, {
+        email:     c.email,
+        accountId: c.accountId || '',
+        sdkKey:    c.sdkKey    ? encrypt(c.sdkKey)    : null,
+        apiKey:    c.apiKey    ? encrypt(c.apiKey)    : null,
+        recoId:    c.recoId    || null,
+        recoToken: c.recoToken ? encrypt(c.recoToken) : null,
+        abtId:     c.abtId     || null,
+        theme:     c.theme     || null,
+      });
+    }
+  } catch(e) {}
   next();
 });
 
@@ -119,6 +146,24 @@ const vwoReady = (VWO_SDK_KEY && VWO_ACCOUNT_ID)
   ? initVwoClient(VWO_SDK_KEY, VWO_ACCOUNT_ID)
   : Promise.resolve();
 
+// ─────────────────────────────────────────────
+// Upstash Redis — shared persistent credential store across all Vercel instances.
+// Set KV_REST_API_URL + KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL + _TOKEN)
+// via the Upstash Redis integration in the Vercel Marketplace.
+// Falls back gracefully to in-memory + disk when not configured.
+// ─────────────────────────────────────────────
+let redis = null;
+(() => {
+  const url   = process.env.UPSTASH_REDIS_REST_URL   || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (url && token) {
+    redis = new Redis({ url, token });
+    console.log('✅  Upstash Redis connected');
+  } else {
+    console.warn('⚠️  No Redis configured — credential store is instance-local. Cross-browser restore will not work on Vercel.');
+  }
+})();
+
 function encrypt(text) {
   const iv     = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
@@ -154,10 +199,28 @@ app.get('/vwo-sdk.js', (req, res) => {
 });
 
 // GET /api/config — returns the visitor's own VWO credentials for client-side SDK init.
-// Looks up by visitorId first; falls back to ?email= query param for cross-device / post-restart recovery.
-app.get('/api/config', (req, res) => {
-  const email = visitorEmailMap.get(req.visitorId) || req.query.email || null;
-  const c     = email ? credStore.get(email) : null;
+// Looks up by visitorId first; falls back to ?email= query param; then checks Redis.
+app.get('/api/config', async (req, res) => {
+  let email = visitorEmailMap.get(req.visitorId) || req.query.email || null;
+
+  // If no email in memory, try Redis visitorId → email mapping
+  if (!email && redis) {
+    try {
+      email = await redis.get(`vemap:${req.visitorId}`) || null;
+      if (email) visitorEmailMap.set(req.visitorId, email);
+    } catch(e) { console.error('[Redis] vemap get failed:', e.message); }
+  }
+
+  let c = email ? credStore.get(email) : null;
+
+  // If creds not in memory, try Redis
+  if (!c && email && redis) {
+    try {
+      c = await redis.get(`creds:${email}`);
+      if (c) credStore.set(email, c);
+    } catch(e) { console.error('[Redis] creds get failed:', e.message); }
+  }
+
   if (!c?.sdkKey) return res.json({ hasCredentials: false, visitorId: req.visitorId });
 
   // Re-associate this visitor with the email if it came in via query param
@@ -187,9 +250,22 @@ app.post('/api/verify-email', async (req, res) => {
   if (!email) return res.status(400).json({ error: 'Email required' });
 
   await vwoReady;
+  const emailKey = email.toLowerCase().trim();
+
+  async function checkHasCredentials() {
+    if (credStore.get(emailKey)?.sdkKey) return true;
+    if (redis) {
+      try {
+        const c = await redis.get(`creds:${emailKey}`);
+        if (c?.sdkKey) { credStore.set(emailKey, c); return true; }
+      } catch(e) { console.error('[Redis] verify-email creds check failed:', e.message); }
+    }
+    return false;
+  }
+
   if (!vwoClient) {
     console.warn('[VWO] verify-email: no client initialised — allowing through');
-    return res.json({ approved: true });
+    return res.json({ approved: true, hasCredentials: await checkHasCredentials() });
   }
 
   try {
@@ -197,7 +273,8 @@ app.post('/api/verify-email', async (req, res) => {
     const isEnabled   = flag.isEnabled();
     const grantaccess = flag.getVariable('grantaccess', false);
     const approved    = isEnabled && grantaccess === true;
-    res.json({ approved });
+    const hasCredentials = approved && await checkHasCredentials();
+    res.json({ approved, hasCredentials });
   } catch(e) {
     console.error('[VWO] SCDemosite check failed:', e.message);
     res.status(500).json({ error: 'Verification service unavailable' });
@@ -206,7 +283,7 @@ app.post('/api/verify-email', async (req, res) => {
 
 // POST /api/credentials — save the visitor's own VWO account credentials.
 // Keyed by email. Sensitive fields are encrypted before writing to the store.
-app.post('/api/credentials', (req, res) => {
+app.post('/api/credentials', async (req, res) => {
   const { email, accountId, sdkKey, apiKey, recoId, recoToken, abtId, theme } = req.body;
   if (!accountId || !sdkKey)
     return res.status(400).json({ error: 'accountId and sdkKey are required' });
@@ -229,6 +306,26 @@ app.post('/api/credentials', (req, res) => {
   visitorEmailMap.set(req.visitorId, credEmail);
   _saveCredStore();
   _saveVisitorEmailMap();
+
+  if (redis) {
+    try {
+      await redis.set(`creds:${credEmail}`, credStore.get(credEmail));
+      await redis.set(`vemap:${req.visitorId}`, credEmail);
+    } catch(e) { console.error('[Redis] credentials save failed:', e.message); }
+  }
+
+  const stored = credStore.get(credEmail);
+  res.cookie('tn_creds', JSON.stringify({
+    email:     credEmail,
+    accountId: String(accountId),
+    sdkKey:    sdkKey,
+    apiKey:    apiKey    || null,
+    recoId:    stored.recoId    || null,
+    recoToken: recoToken || (stored.recoToken ? decrypt(stored.recoToken) : null),
+    abtId:     stored.abtId    || null,
+    theme:     stored.theme    || null,
+  }), { maxAge: 1000 * 60 * 60 * 24 * 365, httpOnly: true, sameSite: 'lax' });
+
   res.json({ ok: true });
 });
 
@@ -372,14 +469,21 @@ app.get('/api/autocomplete', async (req, res) => {
 });
 
 // DELETE /api/credentials — clear everything for this visitor
-app.delete('/api/credentials', (req, res) => {
+app.delete('/api/credentials', async (req, res) => {
   const email = visitorEmailMap.get(req.visitorId);
   if (email) {
     credStore.delete(email);
     _saveCredStore();
+    if (redis) {
+      try { await redis.del(`creds:${email}`); } catch(e) { console.error('[Redis] creds del failed:', e.message); }
+    }
   }
   visitorEmailMap.delete(req.visitorId);
   _saveVisitorEmailMap();
+  if (redis) {
+    try { await redis.del(`vemap:${req.visitorId}`); } catch(e) { console.error('[Redis] vemap del failed:', e.message); }
+  }
+  res.clearCookie('tn_creds');
   res.json({ ok: true });
 });
 

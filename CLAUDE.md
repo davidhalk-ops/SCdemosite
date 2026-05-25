@@ -32,6 +32,8 @@ Copy `.env.example` to `.env` and populate:
 | `VWO_SDK_KEY` | VWO server-side SDK key |
 | `VWO_ACCOUNT_ID` | VWO account ID |
 | `ENCRYPTION_KEY` | 64-char hex key for AES-256-GCM credential encryption — **required for persistence across restarts**; auto-generated (ephemeral) if unset |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL — set automatically by the Upstash Redis integration in the Vercel Marketplace. Required for cross-browser credential restore. |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token — set automatically by the same integration. |
 
 ## Architecture
 

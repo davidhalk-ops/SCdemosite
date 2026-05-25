@@ -1185,7 +1185,7 @@ function buildGateHTML() {
       inputId: 'gate-reco-token', type: 'password', placeholder: '••••••••••••••••',
       value: gateState.recoToken },
     { key: 'abt-id', num: 6,
-      title: 'Wingify Identifier',
+      title: 'Wingify Commerce Identifier',
       hint: 'Your Wingify identifier — the same one used for your Web Experimentation implementation. This powers the Search and product discovery features in the demo.',
       inputId: 'gate-abt-id', type: 'text', placeholder: 'e.g. b0ffe524c1c6b488e62b86541f9fd7ec',
       value: gateState.abtId },
@@ -1231,7 +1231,24 @@ async function handleGateNext() {
       if (data.approved) {
         gateState.email      = val;
         gateState.emailError = null;
-        gateState.step       = 'theme';
+        if (data.hasCredentials) {
+          try {
+            const cfg = await fetch(`/api/config?email=${encodeURIComponent(val)}`).then(r => r.json());
+            if (cfg.hasCredentials) {
+              siteConfig = cfg;
+              if (cfg.recoId) {
+                ABTASTY_RECO_URL   = `https://uc-info.eu.abtasty.com/v1/reco/${cfg.recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
+                ABTASTY_RECO_TOKEN = cfg.recoToken || '';
+              }
+              applyTheme(cfg.theme || 'canada');
+              loadRecosTag(cfg.recoId || '1120');
+              hideGate();
+              render();
+              return;
+            }
+          } catch(e) {}
+        }
+        gateState.step = 'theme';
         renderGateStep();
       } else {
         gateState.email      = val;
@@ -1331,7 +1348,6 @@ async function handleGateNext() {
         siteConfig.recoToken      = gateState.recoToken;
         siteConfig.abtId          = gateState.abtId;
         siteConfig.theme          = gateState.theme;
-        lsSave({ email: gateState.email, accountId: gateState.accountId, sdkKey: gateState.sdkKey, apiKey: gateState.apiKey, recoId: gateState.recoId, recoToken: gateState.recoToken, abtId: gateState.abtId, theme: gateState.theme });
         applyTheme(gateState.theme || 'canada');
         loadRecosTag(gateState.recoId);
         ABTASTY_RECO_URL = `https://uc-info.eu.abtasty.com/v1/reco/${gateState.recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
@@ -1389,7 +1405,7 @@ function openCredentials() {
       <input id="cred-reco-token" type="password" value="${siteConfig.recoToken || ''}" autocomplete="off">
     </div>
     <div class="creds-field">
-      <label>Wingify Identifier</label>
+      <label>Wingify Commerce Identifier</label>
       <input id="cred-abt-id" type="text" value="${siteConfig.abtId || ''}" autocomplete="off">
     </div>
     <button class="creds-save-btn" id="creds-save-btn" onclick="saveCredentials()">Save Changes</button>
@@ -1430,7 +1446,6 @@ async function saveCredentials() {
       siteConfig.recoId    = recoId;
       siteConfig.recoToken = recoToken;
       if (abtId) siteConfig.abtId = abtId;
-      lsSave({ email: siteConfig.email || '', accountId, sdkKey, apiKey: siteConfig.apiKey || '', recoId, recoToken, abtId: siteConfig.abtId || '', theme: siteConfig.theme || '' });
       if (selectedTheme) {
         siteConfig.theme = selectedTheme;
         applyTheme(selectedTheme);
@@ -1455,7 +1470,6 @@ async function saveCredentials() {
 
 async function resetCredentials() {
   if (!confirm('Reset all credentials? You\'ll be prompted to re-enter them on the next page load.')) return;
-  lsClear();
   await fetch('/api/credentials', { method: 'DELETE' });
   window.location.reload();
 }
@@ -2496,37 +2510,10 @@ function _bindNavSearch() {
   });
 }
 
-// ====== LOCAL STORAGE HELPERS ======
-const LS_KEY = 'tn_creds';
-
-function lsSave(creds) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(creds)); } catch(e) {}
-}
-
-function lsLoad() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e) { return null; }
-}
-
-function lsClear() {
-  try { localStorage.removeItem(LS_KEY); } catch(e) {}
-}
-
 // ====== BOOT ======
 async function boot() {
-  // Restore credentials to server from localStorage (survives server cold starts / restarts)
-  const stored = lsLoad();
-  if (stored?.email) {
-    try {
-      await fetch('/api/credentials', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(stored),
-      });
-    } catch(e) {}
-  }
-
   try {
-    const emailParam = stored?.email ? `?email=${encodeURIComponent(stored.email)}` : '';
-    siteConfig = await fetch(`/api/config${emailParam}`).then(r => r.json());
+    siteConfig = await fetch('/api/config').then(r => r.json());
   } catch(e) {
     siteConfig = { hasCredentials: false };
   }
