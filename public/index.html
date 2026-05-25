@@ -808,6 +808,8 @@ const THEME_CONTENT = {
     footerCompanyLinks: ['Our Story','Sustainability','Careers','Press','Store Finder'],
     footerSupportLinks: ['FAQ','Shipping Info','Returns','Size Guide','Contact Us'],
     footerCopyright: '© 2025 True North Outfitters Inc. All rights reserved. 🇨🇦',
+    searchGuideHref: '/search-implementation.html',
+    searchGuideLabel: 'Search Implementation Guide',
     recoPlaceholder: 'Add your recos IDs inside of your FME account',
     pdpStaticRecoTitle: 'Complete the <span>Look</span>',
     cartStaticRecoTitle: "While You're <span>Here…</span>",
@@ -864,6 +866,8 @@ const THEME_CONTENT = {
     footerCompanyLinks: ['Notre Histoire','Développement Durable','Carrières','Presse','Trouver un Magasin'],
     footerSupportLinks: ['FAQ','Infos de Livraison','Retours','Guide des Tailles','Contactez-nous'],
     footerCopyright: '© 2025 Atelier Lumière S.A.S. Tous droits réservés. 🇫🇷',
+    searchGuideHref: '/search-implementation-fr.html',
+    searchGuideLabel: "Guide d'Implémentation de la Recherche",
     recoPlaceholder: 'Ajoutez vos IDs de recos dans votre compte FME',
     pdpStaticRecoTitle: 'Complétez le <span>Look</span>',
     cartStaticRecoTitle: 'Pendant que Vous <span>Êtes Là…</span>',
@@ -1983,7 +1987,7 @@ function buildFooter() {
       <p>${T.footerCopyright}</p>
       <div style="display:flex;align-items:center;gap:14px">
         <button class="footer-manage-link" onclick="openCredentials()">Manage Credentials</button>
-        <a href="/search-implementation.html" target="_blank" rel="noopener" class="footer-manage-link" style="text-decoration:underline">Search Implementation Guide</a>
+        <a href="${T.searchGuideHref}" target="_blank" rel="noopener" class="footer-manage-link" style="text-decoration:underline">${T.searchGuideLabel}</a>
         <div class="abt-powered">
           Powered by <strong>Wingify Commerce</strong> — Search · Merch · Recommendations
         </div>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide d'Implémentation de la Recherche — Atelier Lumière × Wingify Commerce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red: #002395; --red-dark: #001a6e; --red-light: #e8eaf6;
+    --white: #FAFAF8; --cream: #F4F1EA; --black: #1A1A18;
+    --gray: #6B6B68; --gray-light: #E8E5DC; --gold: #C5A028;
+    --pine: #EF4135; --pine-light: #fde8e7;
+    --code-bg: #1e1e2e; --code-fg: #cdd6f4;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'Fira Mono', 'Cascadia Code', 'Consolas', monospace;
+    --radius: 4px; --radius-lg: 10px;
+    --shadow: 0 2px 16px rgba(26,26,24,0.10);
+  }
+  body { font-family: var(--font-body); background: var(--white); color: var(--black); line-height: 1.7; }
+  a { color: var(--red); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { display: block; max-width: 100%; }
+
+  /* ── NAV ── */
+  .top-nav {
+    background: var(--black); padding: 14px 40px;
+    display: flex; align-items: center; gap: 20px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .top-nav-logo {
+    font-family: var(--font-display); font-size: 18px; font-weight: 900;
+    color: white; display: flex; align-items: center; gap: 8px;
+  }
+  .top-nav-logo .leaf { color: #8aaaff; }
+  .top-nav a { color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; transition: color 0.15s; }
+  .top-nav a:hover { color: white; text-decoration: none; }
+  .top-nav-sep { color: rgba(255,255,255,0.2); }
+
+  /* ── HERO ── */
+  .doc-hero {
+    background: var(--black); padding: 72px 40px 56px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .doc-hero-inner { max-width: 860px; margin: 0 auto; }
+  .doc-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(0,35,149,0.25); border: 1px solid rgba(0,35,149,0.5);
+    color: #8aaaff; border-radius: 20px; padding: 5px 14px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .doc-hero h1 {
+    font-family: var(--font-display); font-size: 48px; font-weight: 900;
+    color: white; line-height: 1.1; margin-bottom: 16px; letter-spacing: -0.5px;
+  }
+  .doc-hero h1 em { color: #8aaaff; font-style: normal; }
+  .doc-hero p { color: rgba(255,255,255,0.6); font-size: 17px; line-height: 1.7; max-width: 640px; }
+
+  /* ── LAYOUT ── */
+  .doc-layout {
+    display: grid; grid-template-columns: 240px 1fr;
+    max-width: 1200px; margin: 0 auto;
+    gap: 0; align-items: start;
+  }
+  @media (max-width: 800px) { .doc-layout { grid-template-columns: 1fr; } }
+
+  /* ── SIDEBAR ── */
+  .doc-sidebar {
+    position: sticky; top: 52px; height: calc(100vh - 52px);
+    overflow-y: auto; padding: 36px 24px;
+    border-right: 1px solid var(--gray-light);
+    background: var(--cream);
+  }
+  .doc-sidebar h6 {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--gray); margin-bottom: 10px; margin-top: 24px;
+  }
+  .doc-sidebar h6:first-child { margin-top: 0; }
+  .doc-sidebar ul { list-style: none; }
+  .doc-sidebar ul li { margin-bottom: 2px; }
+  .doc-sidebar ul li a {
+    display: block; padding: 5px 10px; border-radius: var(--radius);
+    font-size: 13px; color: var(--gray); transition: all 0.12s;
+  }
+  .doc-sidebar ul li a:hover { background: var(--gray-light); color: var(--black); text-decoration: none; }
+
+  /* ── CONTENT ── */
+  .doc-content { padding: 48px 56px 80px; max-width: 860px; }
+  .doc-content section { margin-bottom: 64px; }
+  .doc-content h2 {
+    font-family: var(--font-display); font-size: 30px; font-weight: 700;
+    color: var(--black); margin-bottom: 16px; padding-top: 8px;
+    border-bottom: 2px solid var(--red); padding-bottom: 10px;
+  }
+  .doc-content h3 {
+    font-size: 18px; font-weight: 700; color: var(--black);
+    margin: 32px 0 10px;
+  }
+  .doc-content h4 {
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--gray); margin: 24px 0 8px;
+  }
+  .doc-content p { margin-bottom: 14px; font-size: 15px; color: #2a2a28; line-height: 1.8; }
+  .doc-content ul, .doc-content ol { padding-left: 22px; margin-bottom: 14px; }
+  .doc-content li { font-size: 15px; margin-bottom: 6px; line-height: 1.7; }
+  .doc-content code {
+    font-family: var(--font-mono); font-size: 13px;
+    background: #f0ede6; color: #001a6e; padding: 2px 6px;
+    border-radius: 3px; white-space: nowrap;
+  }
+
+  /* ── CODE BLOCKS ── */
+  pre {
+    background: var(--code-bg); color: var(--code-fg);
+    padding: 20px 24px; border-radius: var(--radius-lg);
+    overflow-x: auto; margin: 16px 0;
+    font-family: var(--font-mono); font-size: 13px; line-height: 1.65;
+    box-shadow: var(--shadow);
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; white-space: pre; }
+  .token-comment { color: #6c7086; }
+  .token-key     { color: #89b4fa; }
+  .token-string  { color: #a6e3a1; }
+  .token-fn      { color: #cba6f7; }
+  .token-kw      { color: #89dceb; }
+  .token-num     { color: #fab387; }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    padding: 16px 20px; border-radius: var(--radius-lg);
+    margin: 20px 0; font-size: 14px; line-height: 1.7;
+    border-left: 4px solid;
+  }
+  .callout-note  { background: var(--pine-light); border-color: var(--pine); color: #5a0000; }
+  .callout-warn  { background: #fef9ec; border-color: var(--gold); color: #5a3d00; }
+  .callout-info  { background: #eef3ff; border-color: #5b7df0; color: #1a2a6e; }
+  .callout strong { font-weight: 700; }
+
+  /* ── DIAGRAM / FLOW ── */
+  .flow-diagram {
+    background: var(--cream); border: 1px solid var(--gray-light);
+    border-radius: var(--radius-lg); padding: 28px;
+    margin: 20px 0; overflow-x: auto;
+  }
+  .flow-row {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 8px; flex-wrap: nowrap;
+  }
+  .flow-box {
+    background: white; border: 1.5px solid var(--gray-light);
+    border-radius: var(--radius); padding: 8px 14px;
+    font-size: 13px; font-weight: 500; white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .flow-box.red   { border-color: var(--red);  background: var(--red-light); color: var(--red-dark); }
+  .flow-box.pine  { border-color: var(--pine); background: var(--pine-light); color: #5a0000; }
+  .flow-box.gold  { border-color: var(--gold); background: #fdf5de; color: #5a3d00; }
+  .flow-box.black { border-color: var(--black); background: var(--black); color: white; }
+  .flow-arr { padding: 0 10px; color: var(--gray); font-size: 16px; flex-shrink: 0; }
+
+  /* ── API TABLE ── */
+  .api-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 14px; }
+  .api-table th { text-align: left; padding: 9px 12px; background: var(--cream); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray); border-bottom: 2px solid var(--gray-light); }
+  .api-table td { padding: 9px 12px; border-bottom: 1px solid var(--gray-light); vertical-align: top; }
+  .api-table td:first-child code { color: #2D5016; background: #EAF0E1; }
+  .badge-req  { display: inline-block; background: var(--red-light); color: var(--red-dark); border-radius: 3px; font-size: 11px; font-weight: 700; padding: 1px 6px; }
+  .badge-opt  { display: inline-block; background: var(--cream); color: var(--gray); border-radius: 3px; font-size: 11px; font-weight: 600; padding: 1px 6px; }
+
+  /* ── STEP BLOCKS ── */
+  .steps { counter-reset: step-ctr; }
+  .step { display: flex; gap: 20px; margin-bottom: 28px; }
+  .step-num {
+    counter-increment: step-ctr;
+    flex-shrink: 0; width: 32px; height: 32px;
+    background: var(--red); color: white; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; margin-top: 2px;
+  }
+  .step-num::before { content: counter(step-ctr); }
+  .step-body h3 { margin-top: 0; font-size: 16px; }
+
+  /* ── FOOTER ── */
+  .doc-footer {
+    background: var(--black); color: rgba(255,255,255,0.45);
+    padding: 32px 40px; text-align: center; font-size: 13px;
+  }
+  .doc-footer a { color: rgba(255,255,255,0.6); }
+  .doc-footer strong { color: #7C6FF0; }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="top-nav-logo"><span class="leaf">⚜️</span> Atelier Lumière</div>
+  <span class="top-nav-sep">›</span>
+  <a href="/">Boutique</a>
+  <span class="top-nav-sep">›</span>
+  <a href="/search-implementation-fr.html" style="color:white">Guide d'Implémentation de la Recherche</a>
+</nav>
+
+<div class="doc-hero">
+  <div class="doc-hero-inner">
+    <div class="doc-badge">🔍 Guide Développeur</div>
+    <h1>Guide d'Implémentation de la <em>Recherche</em><br>Wingify Commerce</h1>
+    <p>Comment la démo Atelier Lumière intègre les APIs Search et Autocomplete de Wingify Commerce — de la configuration des identifiants jusqu'à la page de résultats complète.</p>
+  </div>
+</div>
+
+<div class="doc-layout">
+  <aside class="doc-sidebar">
+    <h6>Vue d'ensemble</h6>
+    <ul>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#credentials">Identifiants &amp; Configuration</a></li>
+    </ul>
+    <h6>Backend</h6>
+    <ul>
+      <li><a href="#proxy">Proxy Côté Serveur</a></li>
+      <li><a href="#search-endpoint">Endpoint de Recherche</a></li>
+      <li><a href="#autocomplete-endpoint">Endpoint d'Autocomplétion</a></li>
+    </ul>
+    <h6>Frontend</h6>
+    <ul>
+      <li><a href="#nav-dropdown">Menu Déroulant de Recherche</a></li>
+      <li><a href="#full-results">Page de Résultats Complète</a></li>
+      <li><a href="#facets">Facettes &amp; Filtres</a></li>
+      <li><a href="#pagination">Pagination</a></li>
+    </ul>
+    <h6>Référence</h6>
+    <ul>
+      <li><a href="#query-params">Paramètres de Requête</a></li>
+      <li><a href="#response-shape">Structure de la Réponse</a></li>
+    </ul>
+  </aside>
+
+  <main class="doc-content">
+
+    <!-- ARCHITECTURE -->
+    <section id="architecture">
+      <h2>Architecture</h2>
+      <p>La recherche dans Atelier Lumière est propulsée par l'<strong>API Search de Wingify Commerce</strong>. Toutes les requêtes transitent par un proxy Express côté serveur afin d'éviter les restrictions CORS du navigateur. Le frontend ne contacte jamais directement l'API Wingify Commerce.</p>
+
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <div class="flow-box red">Navigateur</div>
+          <div class="flow-arr">→</div>
+          <div class="flow-box black">Proxy Express<br><small style="font-weight:400;opacity:0.7">/api/search · /api/autocomplete</small></div>
+          <div class="flow-arr">→</div>
+          <div class="flow-box pine">Wingify Commerce<br><small style="font-weight:400">search-api.abtasty.com</small></div>
+        </div>
+        <div class="flow-row" style="margin-top:16px">
+          <div class="flow-box gold">abtId (Identifiant Wingify)</div>
+          <div class="flow-arr">→</div>
+          <div class="flow-box">Index : <code style="background:none;color:inherit;padding:0">{abtId}_Catalog</code></div>
+        </div>
+      </div>
+
+      <p>Il existe deux surfaces de recherche distinctes :</p>
+      <ul>
+        <li><strong>Menu déroulant de la barre de navigation</strong> — s'affiche sous la barre de navigation au fil de la saisie. Présente les suggestions d'autocomplétion dans la colonne gauche et jusqu'à 3 produits correspondants dans la colonne droite.</li>
+        <li><strong>Page de résultats complète</strong> — une page <code>search</code> dédiée avec filtres à facettes, contrôles de tri et pagination par chargement progressif.</li>
+      </ul>
+    </section>
+
+    <!-- CREDENTIALS -->
+    <section id="credentials">
+      <h2>Identifiants &amp; Configuration</h2>
+      <p>L'intégration de la recherche nécessite un seul identifiant : l'<strong>Identifiant Wingify Commerce</strong> (appelé <code>abtId</code> en interne). C'est le même identifiant que celui utilisé pour votre implémentation Web Experimentation Wingify AB Tasty.</p>
+
+      <div class="callout callout-info">
+        <strong>Nommage de l'index :</strong> L'API Search de Wingify Commerce utilise un index nommé <code>{abtId}_Catalog</code>. Par exemple, si votre identifiant est <code>b0ffe524c1c6b488</code>, votre index de recherche est <code>b0ffe524c1c6b488_Catalog</code>. Le proxy l'ajoute automatiquement — vous n'avez jamais à le construire manuellement côté frontend.
+      </div>
+    </section>
+
+    <!-- PROXY -->
+    <section id="proxy">
+      <h2>Proxy Côté Serveur</h2>
+      <p>Deux routes Express jouent le rôle de proxies transparents. Leur unique responsabilité est de :</p>
+      <ol>
+        <li>Récupérer le <code>abtId</code> du visiteur depuis le magasin d'identifiants.</li>
+        <li>Transmettre la requête à l'API Wingify Commerce avec l'index ou le <code>client_id</code> approprié.</li>
+        <li>Retransmettre la réponse au navigateur.</li>
+      </ol>
+
+      <div class="callout callout-warn">
+        <strong>Pourquoi un proxy ?</strong> L'API Wingify Commerce n'envoie pas les en-têtes CORS permettant les requêtes directes depuis le navigateur. Tous les appels de recherche doivent transiter par votre propre serveur.
+      </div>
+    </section>
+
+    <!-- SEARCH ENDPOINT -->
+    <section id="search-endpoint">
+      <h2>Endpoint de Recherche</h2>
+      <h4>GET /api/search</h4>
+
+      <pre><code><span class="token-comment">// src/server.js</span>
+app.<span class="token-fn">get</span>(<span class="token-string">'/api/search'</span>, <span class="token-kw">async</span> (req, res) => {
+  <span class="token-kw">const</span> { text } = req.query;
+  <span class="token-kw">if</span> (!text) <span class="token-kw">return</span> res.<span class="token-fn">status</span>(<span class="token-num">400</span>).<span class="token-fn">json</span>({ error: <span class="token-string">'text required'</span> });
+
+  <span class="token-kw">const</span> email = visitorEmailMap.<span class="token-fn">get</span>(req.visitorId);
+  <span class="token-kw">const</span> c     = email ? credStore.<span class="token-fn">get</span>(email) : <span class="token-kw">null</span>;
+  <span class="token-kw">const</span> abtId = c?.abtId || <span class="token-kw">null</span>;
+  <span class="token-kw">if</span> (!abtId) <span class="token-kw">return</span> res.<span class="token-fn">json</span>({ hits: [], totalHits: <span class="token-num">0</span>, noIdentifier: <span class="token-kw">true</span> });
+
+  <span class="token-comment">// Transmet toute la chaîne de requête (text, hitsPerPage, page, filters, sort…)</span>
+  <span class="token-kw">const</span> rawQs = req.originalUrl.<span class="token-fn">split</span>(<span class="token-string">'?'</span>)[<span class="token-num">1</span>] || <span class="token-string">''</span>;
+  <span class="token-kw">const</span> index = <span class="token-fn">encodeURIComponent</span>(<span class="token-string">`${abtId}_Catalog`</span>);
+
+  <span class="token-kw">const</span> upstream = <span class="token-kw">await</span> <span class="token-fn">fetch</span>(
+    <span class="token-string">`https://search-api.abtasty.com/search?${rawQs}&amp;index=${index}`</span>
+  );
+  <span class="token-kw">const</span> body = <span class="token-kw">await</span> upstream.<span class="token-fn">json</span>();
+  res.<span class="token-fn">status</span>(upstream.status).<span class="token-fn">json</span>(body);
+});</code></pre>
+
+      <p>La chaîne de requête complète du navigateur est transmise telle quelle (incluant <code>filters</code>, <code>sort</code>, <code>page</code>, <code>semanticRatio</code>) — le proxy ajoute uniquement le paramètre <code>index</code> dérivé du <code>abtId</code> du visiteur.</p>
+
+      <table class="api-table">
+        <thead><tr><th>Paramètre</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>text</code></td><td><span class="badge-req">requis</span></td><td>La chaîne de recherche</td></tr>
+          <tr><td><code>hitsPerPage</code></td><td><span class="badge-opt">optionnel</span></td><td>Résultats par page. Par défaut 12 sur la page complète, 3 dans le menu déroulant</td></tr>
+          <tr><td><code>page</code></td><td><span class="badge-opt">optionnel</span></td><td>Index de page à base zéro pour la pagination</td></tr>
+          <tr><td><code>semanticRatio</code></td><td><span class="badge-opt">optionnel</span></td><td>Flottant 0–1. <code>0</code> = mots-clés uniquement, <code>1</code> = entièrement sémantique (IA). Fixé à <code>1</code> dans la version actuelle</td></tr>
+          <tr><td><code>sort</code></td><td><span class="badge-opt">optionnel</span></td><td>Ex. : <code>price:asc</code>, <code>price:desc</code>, <code>name:asc</code></td></tr>
+          <tr><td><code>filters[champ][]</code></td><td><span class="badge-opt">optionnel</span></td><td>Filtre de liste en notation entre crochets. Répétable : <code>filters[couleur][]=Rouge&amp;filters[couleur][]=Bleu</code></td></tr>
+          <tr><td><code>filters[price][N][operator]</code></td><td><span class="badge-opt">optionnel</span></td><td>Opérateur de plage : <code>&gt;=</code> ou <code>&lt;=</code> (encodé en pourcentage)</td></tr>
+          <tr><td><code>filters[price][N][value]</code></td><td><span class="badge-opt">optionnel</span></td><td>Valeur numérique associée à l'opérateur ci-dessus</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- AUTOCOMPLETE ENDPOINT -->
+    <section id="autocomplete-endpoint">
+      <h2>Endpoint d'Autocomplétion</h2>
+      <h4>GET /api/autocomplete</h4>
+
+      <pre><code><span class="token-comment">// src/server.js</span>
+app.<span class="token-fn">get</span>(<span class="token-string">'/api/autocomplete'</span>, <span class="token-kw">async</span> (req, res) => {
+  <span class="token-kw">const</span> { text, hitsPerPage } = req.query;
+  <span class="token-kw">if</span> (!text) <span class="token-kw">return</span> res.<span class="token-fn">json</span>({ suggestions: [] });
+
+  <span class="token-kw">const</span> abtId = <span class="token-comment">/* …récupéré depuis credStore… */</span>;
+  <span class="token-kw">if</span> (!abtId) <span class="token-kw">return</span> res.<span class="token-fn">json</span>({ suggestions: [] });
+
+  <span class="token-kw">const</span> params = <span class="token-kw">new</span> <span class="token-fn">URLSearchParams</span>({ client_id: abtId, query: text });
+  <span class="token-kw">if</span> (hitsPerPage) params.<span class="token-fn">set</span>(<span class="token-string">'hits_per_page'</span>, hitsPerPage);
+
+  <span class="token-kw">const</span> upstream = <span class="token-kw">await</span> <span class="token-fn">fetch</span>(
+    <span class="token-string">`https://search-api.abtasty.com/autocomplete?${params}`</span>
+  );
+  <span class="token-kw">const</span> body = <span class="token-kw">await</span> upstream.<span class="token-fn">json</span>();
+  res.<span class="token-fn">status</span>(upstream.status).<span class="token-fn">json</span>(body);
+});</code></pre>
+
+      <div class="callout callout-note">
+        <strong>Index de suggestions :</strong> L'autocomplétion nécessite un index <code>_Suggestions</code> distinct côté Wingify Commerce (différent de <code>_Catalog</code>). Si aucune suggestion n'apparaît, contactez le support Wingify Commerce pour provisionner l'index de suggestions pour votre <code>client_id</code>.
+      </div>
+
+      <table class="api-table">
+        <thead><tr><th>Paramètre</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>text</code></td><td>Chaîne de requête (transmise en tant que <code>query=</code> en amont)</td></tr>
+          <tr><td><code>hitsPerPage</code></td><td>Nombre maximum de suggestions à retourner (transmis en tant que <code>hits_per_page=</code>). Par défaut 5 dans le menu déroulant</td></tr>
+        </tbody>
+      </table>
+
+      <p>La structure de la réponse est <code>{ suggestions: [{ text: "…" }, …] }</code>. Chaque suggestion possède une propriété <code>text</code> utilisée pour remplir la colonne gauche du menu déroulant.</p>
+    </section>
+
+    <!-- NAV DROPDOWN -->
+    <section id="nav-dropdown">
+      <h2>Menu Déroulant de Recherche</h2>
+      <p>Lorsque l'utilisateur tape dans la barre de recherche de la navigation, un menu déroulant à deux colonnes apparaît sous le champ de saisie. La colonne gauche affiche les suggestions d'autocomplétion ; la colonne droite affiche jusqu'à 3 produits du catalogue. Les deux colonnes se mettent à jour indépendamment dès réception des réponses — l'API qui répond en premier est rendue immédiatement sans attendre l'autre.</p>
+
+      <h3>Délai d'attente et AbortController</h3>
+      <p>Pour éviter de surcharger l'API à chaque frappe, les requêtes sont déclenchées après un délai de 200 ms. Un <code>AbortController</code> est utilisé pour annuler toute requête en cours de la frappe précédente avant d'en lancer une nouvelle — cela empêche les résultats obsolètes d'écraser les résultats plus récents.</p>
+
+      <pre><code><span class="token-comment">// public/index.html — _doNavSearch()</span>
+<span class="token-kw">function</span> <span class="token-fn">_doNavSearch</span>(query) {
+  <span class="token-comment">// Annule la paire de requêtes précédente</span>
+  <span class="token-kw">if</span> (_navAbort) _navAbort.<span class="token-fn">abort</span>();
+  _navAbort = <span class="token-kw">new</span> <span class="token-fn">AbortController</span>();
+  <span class="token-kw">const</span> { signal } = _navAbort;
+
+  <span class="token-comment">// Les deux s'exécutent indépendamment — le premier à arriver met à jour sa colonne</span>
+  (<span class="token-kw">async</span> () => {
+    <span class="token-kw">const</span> res = <span class="token-kw">await</span> <span class="token-fn">fetch</span>(<span class="token-string">`/api/autocomplete?text=${encodeURIComponent(query)}&amp;hitsPerPage=5`</span>, { signal });
+    <span class="token-kw">const</span> data = res.ok ? <span class="token-kw">await</span> res.<span class="token-fn">json</span>() : {};
+    _navDropSuggestions = data.suggestions || [];
+    <span class="token-fn">_showNavDropdown</span>(_navDropSuggestions, _navDropHits, _navDropTotalHits, query);
+  })();
+
+  (<span class="token-kw">async</span> () => {
+    <span class="token-kw">const</span> res = <span class="token-kw">await</span> <span class="token-fn">fetch</span>(<span class="token-string">`/api/search?text=${encodeURIComponent(query)}&amp;hitsPerPage=3`</span>, { signal });
+    <span class="token-kw">const</span> data = res.ok ? <span class="token-kw">await</span> res.<span class="token-fn">json</span>() : {};
+    _navDropHits = data.hits || [];
+    <span class="token-fn">_showNavDropdown</span>(_navDropSuggestions, _navDropHits, _navDropTotalHits, query);
+  })();
+}</code></pre>
+
+      <h3>Comportement au clavier</h3>
+      <ul>
+        <li><kbd>Entrée</kbd> — ferme le menu déroulant et navigue vers la page de résultats complète pour la requête en cours.</li>
+        <li><kbd>Échap</kbd> — ferme le menu déroulant sans naviguer.</li>
+        <li>Clic sur une suggestion — remplit le champ avec le texte de cette suggestion et déclenche une recherche complète.</li>
+        <li>Clic sur un produit — ouvre le lien du produit dans un nouvel onglet.</li>
+        <li>Clic sur « Voir tous les résultats » — navigue vers la page de résultats complète.</li>
+        <li>Clic en dehors du menu — le ferme.</li>
+      </ul>
+
+      <h3>Structure DOM du menu déroulant</h3>
+      <p>Le menu déroulant réside dans un élément <code>#nav-search-dropdown</code> en position fixe, repositionné à chaque rendu via <code>_positionDropdown()</code>, qui lit les coordonnées du champ de saisie pour aligner le bord droit du menu avec celui du champ.</p>
+
+      <pre><code><span class="token-comment">&lt;!-- Disposition en deux colonnes --&gt;</span>
+&lt;div class="search-drop-columns"&gt;
+  &lt;div class="search-drop-col search-drop-col-left"&gt;
+    <span class="token-comment">&lt;!-- Suggestions d'autocomplétion --&gt;</span>
+    &lt;div class="search-drop-suggestion" data-query="..."&gt;...&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="search-drop-col"&gt;
+    <span class="token-comment">&lt;!-- Produits : vignette + nom + prix --&gt;</span>
+    &lt;div class="search-drop-hit" data-link="..."&gt;...&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="search-drop-footer"&gt;
+  &lt;button id="search-view-all-btn"&gt;Voir tous les résultats pour "..."&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+    </section>
+
+    <!-- FULL RESULTS -->
+    <section id="full-results">
+      <h2>Page de Résultats Complète</h2>
+      <p>Naviguer vers la page <code>search</code> (via <kbd>Entrée</kbd>, « Voir tous les résultats » ou <code>_viewAllSearch()</code>) affiche une mise en page complète de résultats alimentée par le même proxy <code>/api/search</code> avec <code>hitsPerPage=12</code>.</p>
+
+      <h3>Variables d'état</h3>
+      <table class="api-table">
+        <thead><tr><th>Variable</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>_searchQuery</code></td><td>Texte de recherche en cours, partagé entre la navigation et les résultats complets</td></tr>
+          <tr><td><code>_currentPage</code></td><td>Index de page à base zéro pour la pagination par chargement progressif</td></tr>
+          <tr><td><code>_accHits</code></td><td>Tableau de résultats accumulés sur toutes les pages chargées</td></tr>
+          <tr><td><code>_lastFacets</code></td><td>Données de facettes issues de la dernière réponse</td></tr>
+          <tr><td><code>_activeFilters</code></td><td>Map de <code>champ → Set&lt;valeur&gt;</code> pour les filtres de liste actifs</td></tr>
+          <tr><td><code>_priceMin</code> / <code>_priceMax</code></td><td>Valeurs actives du filtre de plage de prix</td></tr>
+          <tr><td><code>_sortBy</code></td><td>Clé de tri active, ex. <code>price:asc</code></td></tr>
+          <tr><td><code>_totalPages</code> / <code>_totalHits</code></td><td>Totaux issus de la dernière réponse</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Pipeline de rendu</h3>
+      <p>Après réception d'une réponse par <code>_doSearch()</code>, quatre fonctions de rendu s'exécutent en séquence :</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num"></div>
+          <div class="step-body">
+            <h3><code>_renderControls()</code></h3>
+            <p>Affiche le nombre de résultats, un lien « Effacer N filtres » (si des filtres sont actifs) et le menu de tri au-dessus de la grille de produits.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num"></div>
+          <div class="step-body">
+            <h3><code>_renderFacets()</code></h3>
+            <p>Lit <code>_lastFacets</code> depuis la réponse et construit le panneau de filtres latéral. Les facettes de liste deviennent des puces à bascule ; les facettes de plage (comme <code>price</code>) deviennent des champs min/max. Les facettes sont masquées si la réponse n'en retourne aucune.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num"></div>
+          <div class="step-body">
+            <h3><code>_renderAccHits()</code></h3>
+            <p>Affiche <code>_accHits</code> sous forme de grille de produits. Chaque résultat montre une image produit (<code>img_link</code>), un nom (<code>title</code> ou <code>name</code>) et un prix. Cliquer sur une carte ouvre le <code>link</code> du produit dans un nouvel onglet.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num"></div>
+          <div class="step-body">
+            <h3><code>_renderLoadMore()</code></h3>
+            <p>Affiche un bouton « Charger N de plus » lorsque <code>_currentPage &lt; _totalPages - 1</code>. Cliquer dessus incrémente <code>_currentPage</code> et appelle <code>_doSearch(undefined, true)</code> — le drapeau <code>append</code> ajoute les nouveaux résultats à <code>_accHits</code> plutôt que de les remplacer.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FACETS -->
+    <section id="facets">
+      <h2>Facettes &amp; Filtres</h2>
+      <p>L'API Search de Wingify Commerce retourne un objet <code>facets</code> en parallèle des résultats. Chaque clé est un champ filtrable. Le proxy transmet cet objet sans modification.</p>
+
+      <h3>Facettes de liste</h3>
+      <p>Lorsqu'une facette possède <code>"type": "list"</code>, ses valeurs sont un tableau de paires <code>[valeur, nombre]</code>. Le frontend affiche chaque paire sous forme de puce cliquable. Sélectionner une puce l'ajoute à <code>_activeFilters[champ]</code> (un <code>Set</code>) et relance la recherche.</p>
+
+      <p>Les filtres de liste actifs sont sérialisés dans la chaîne de requête en notation entre crochets :</p>
+      <pre><code>filters[couleur][]=Rouge&amp;filters[couleur][]=Bleu&amp;filters[genre][]=Homme</code></pre>
+
+      <h3>Facettes de plage</h3>
+      <p>Lorsqu'une facette possède <code>"type": "range"</code>, ses <code>values</code> contiennent <code>min</code> et <code>max</code>. Celles-ci s'affichent sous forme de deux champs numériques et d'un bouton Appliquer. Les filtres de plage utilisent une notation structurée entre crochets :</p>
+      <pre><code><span class="token-comment">// Prix >= 50 ET prix <= 200</span>
+filters[price][0][operator]=%3E%3D&amp;filters[price][0][value]=50
+filters[price][1][operator]=%3C%3D&amp;filters[price][1][value]=200</code></pre>
+
+      <div class="callout callout-warn">
+        <strong>Facettes absentes ?</strong> Les facettes doivent être configurées sur votre index de catalogue Wingify Commerce. Si le champ <code>facets</code> est absent ou vide dans les réponses de recherche, contactez le support Wingify Commerce pour activer les facettes sur les champs concernés de votre index.
+      </div>
+    </section>
+
+    <!-- PAGINATION -->
+    <section id="pagination">
+      <h2>Pagination</h2>
+      <p>L'implémentation utilise un modèle de <strong>chargement progressif</strong> (et non une navigation de pages traditionnelle). L'index de page est suivi dans <code>_currentPage</code> et incrémenté à chaque clic sur « Charger plus ».</p>
+
+      <pre><code><span class="token-comment">// Mode ajout — appelé par le bouton "Charger plus"</span>
+<span class="token-fn">_doSearch</span>(<span class="token-kw">undefined</span>, <span class="token-kw">true</span>);
+
+<span class="token-comment">// À l'intérieur de _doSearch() :</span>
+_accHits = append
+  ? [..._accHits, ...(data.hits || [])]  <span class="token-comment">// ajout</span>
+  : (data.hits || []);                   <span class="token-comment">// remplacement</span></code></pre>
+
+      <p>Tout changement de requête, d'ordre de tri ou de filtres réinitialise <code>_currentPage</code> à <code>0</code> et <code>_accHits</code> à <code>[]</code>, reprenant depuis la première page.</p>
+    </section>
+
+    <!-- QUERY PARAMS -->
+    <section id="query-params">
+      <h2>Référence des Paramètres de Requête</h2>
+      <p>L'ensemble complet des paramètres envoyés par la page de résultats est construit par <code>_buildSearchParams(page)</code> :</p>
+
+      <pre><code><span class="token-kw">function</span> <span class="token-fn">_buildSearchParams</span>(page) {
+  <span class="token-kw">const</span> p = [
+    <span class="token-string">`text=${encodeURIComponent(_searchQuery)}`</span>,
+    <span class="token-string">`hitsPerPage=12`</span>,
+    <span class="token-string">`page=${page}`</span>,
+    <span class="token-string">`semanticRatio=1`</span>,    <span class="token-comment">// recherche entièrement sémantique / IA</span>
+  ];
+  <span class="token-kw">if</span> (_sortBy) p.<span class="token-fn">push</span>(<span class="token-string">`sort=${_sortBy}`</span>);
+
+  <span class="token-comment">// Filtres de liste</span>
+  Object.<span class="token-fn">entries</span>(_activeFilters).<span class="token-fn">forEach</span>(([field, vals]) => {
+    [...vals].<span class="token-fn">forEach</span>(v => p.<span class="token-fn">push</span>(<span class="token-string">`filters[${field}][]=${encodeURIComponent(v)}`</span>));
+  });
+
+  <span class="token-comment">// Filtres de plage de prix</span>
+  <span class="token-kw">let</span> ri = <span class="token-num">0</span>;
+  <span class="token-kw">if</span> (_priceMin !== <span class="token-string">''</span>) {
+    p.<span class="token-fn">push</span>(<span class="token-string">`filters[price][${ri}][operator]=%3E%3D`</span>);
+    p.<span class="token-fn">push</span>(<span class="token-string">`filters[price][${ri++}][value]=${_priceMin}`</span>);
+  }
+  <span class="token-kw">if</span> (_priceMax !== <span class="token-string">''</span>) {
+    p.<span class="token-fn">push</span>(<span class="token-string">`filters[price][${ri}][operator]=%3C%3D`</span>);
+    p.<span class="token-fn">push</span>(<span class="token-string">`filters[price][${ri}][value]=${_priceMax}`</span>);
+  }
+
+  <span class="token-kw">return</span> p.<span class="token-fn">join</span>(<span class="token-string">'&amp;'</span>);
+}</code></pre>
+    </section>
+
+    <!-- RESPONSE SHAPE -->
+    <section id="response-shape">
+      <h2>Structure de la Réponse</h2>
+      <p>L'API Search de Wingify Commerce retourne les champs de premier niveau suivants (transmis sans modification par le proxy) :</p>
+
+      <pre><code>{
+  <span class="token-key">"hits"</span>:       [{ <span class="token-key">"title"</span>: <span class="token-string">"…"</span>, <span class="token-key">"price"</span>: <span class="token-num">99</span>, <span class="token-key">"img_link"</span>: <span class="token-string">"…"</span>, <span class="token-key">"link"</span>: <span class="token-string">"…"</span> }],
+  <span class="token-key">"totalHits"</span>:  <span class="token-num">42</span>,
+  <span class="token-key">"totalPages"</span>: <span class="token-num">4</span>,
+  <span class="token-key">"page"</span>:       <span class="token-num">0</span>,
+  <span class="token-key">"facets"</span>: {
+    <span class="token-key">"couleur"</span>: { <span class="token-key">"type"</span>: <span class="token-string">"list"</span>,  <span class="token-key">"values"</span>: [[<span class="token-string">"Rouge"</span>, <span class="token-num">12</span>], [<span class="token-string">"Bleu"</span>, <span class="token-num">8</span>]] },
+    <span class="token-key">"price"</span>:   { <span class="token-key">"type"</span>: <span class="token-string">"range"</span>, <span class="token-key">"values"</span>: { <span class="token-key">"min"</span>: <span class="token-num">19</span>, <span class="token-key">"max"</span>: <span class="token-num">349</span> } }
+  }
+}
+
+<span class="token-comment">// Sentinel ajouté par le proxy lorsqu'aucun abtId n'est configuré :</span>
+{ <span class="token-key">"hits"</span>: [], <span class="token-key">"totalHits"</span>: <span class="token-num">0</span>, <span class="token-key">"noIdentifier"</span>: <span class="token-kw">true</span> }</code></pre>
+
+      <h3>Structure de la réponse d'autocomplétion</h3>
+      <pre><code>{
+  <span class="token-key">"suggestions"</span>: [
+    { <span class="token-key">"text"</span>: <span class="token-string">"parka alpine"</span> },
+    { <span class="token-key">"text"</span>: <span class="token-string">"parka chamonix"</span> }
+  ]
+}</code></pre>
+    </section>
+
+  </main>
+</div>
+
+<footer class="doc-footer">
+  <p>Démo Atelier Lumière — Propulsé par <strong>Wingify Commerce</strong> · <a href="/">Retour à la boutique</a></p>
+</footer>
+
+</body>
+</html>
