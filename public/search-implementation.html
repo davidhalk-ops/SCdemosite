@@ -274,21 +274,9 @@
       <h2>Credentials &amp; Setup</h2>
       <p>The search integration requires a single credential: the <strong>Wingify Commerce Identifier</strong> (called <code>abtId</code> internally). This is the same identifier used for your Wingify AB Tasty Web Experimentation implementation.</p>
 
-      <h3>Where it comes from</h3>
-      <p>During the onboarding gate (Step 6 of 6), the user enters their Wingify Commerce Identifier. It is stored server-side, encrypted at rest, and persisted across sessions via Upstash Redis. On subsequent visits the server looks it up by email address — the browser never needs to re-enter it.</p>
-
       <div class="callout callout-info">
         <strong>Index naming:</strong> The Wingify Commerce Search API uses an index named <code>{abtId}_Catalog</code>. For example, if your identifier is <code>b0ffe524c1c6b488</code>, your search index is <code>b0ffe524c1c6b488_Catalog</code>. The proxy appends this automatically — you never build it manually in the frontend.
       </div>
-
-      <h3>Accessing the credential server-side</h3>
-      <pre><code><span class="token-comment">// In any Express route handler:</span>
-<span class="token-kw">const</span> email = visitorEmailMap.<span class="token-fn">get</span>(req.visitorId);
-<span class="token-kw">const</span> c     = email ? credStore.<span class="token-fn">get</span>(email) : <span class="token-kw">null</span>;
-<span class="token-kw">const</span> abtId = c?.abtId || <span class="token-kw">null</span>;
-
-<span class="token-comment">// If no abtId, return a sentinel so the frontend can show a "not configured" message</span>
-<span class="token-kw">if</span> (!abtId) <span class="token-kw">return</span> res.<span class="token-fn">json</span>({ hits: [], totalHits: <span class="token-num">0</span>, noIdentifier: <span class="token-kw">true</span> });</code></pre>
     </section>
 
     <!-- PROXY -->
