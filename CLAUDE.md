@@ -97,15 +97,24 @@ Footer link opens `#creds-overlay`. Displays all credentials including **Wingify
 
 ### Search
 
-The nav search bar opens a full-screen overlay (`#search-overlay`) backed by the Wingify Commerce Search and Autocomplete APIs. Key details:
-- **Autocomplete**: as the user types (≥2 chars), `GET /api/autocomplete?text=<query>&hitsPerPage=5` is called at 150ms debounce. Server proxies to `https://search-api.abtasty.com/autocomplete?client_id={abtId}&query=...`. Suggestions appear in `#search-suggestions` below the input; clicking one fills the input and triggers a full search. Suggestions are hidden when full results render, on Enter, or on close.
-- **Full search**: `GET /api/search?text=<query>&hitsPerPage=8` proxied server-side; called at 300ms debounce or on Enter.
-- Server search calls `https://search-api.abtasty.com/search?index={abtId}_Catalog&text=...`
-- Results show product image (`img_link`), title, and price from the Wingify Commerce catalog
-- Facet filters (chip toggles for list facets, price range inputs for range facets), Keyword/Semantic toggle (`semanticRatio`), and load-more pagination
-- Clicking a result opens the product link in a new tab
-- Escape key closes; backdrop click closes
-- JS: `openSearch()`, `closeSearch()`, `_doSearch()`, `_doAutocomplete()`, `_hideSuggestions()`, `_renderControls()`, `_renderFacets()`, `_renderAccHits()`, `_renderLoadMore()`
+The nav search bar drives two flows: a dropdown preview (autocomplete + hits) and a full search results page.
+
+**Nav dropdown** — triggered by typing in the nav search input (200ms debounce):
+- Two parallel requests fire on each keystroke, both cancelled via `AbortController` if another keystroke arrives before they resolve.
+- `GET /api/autocomplete?text=<query>&hitsPerPage=5` → server proxies to `https://search-api.abtasty.com/autocomplete?client_id={abtId}&query=<query>`. **Required params are `client_id` and `query`** — sending `text` instead of `query` returns a 400. The `_Suggestions` index is populated from real user query history; it is empty on a fresh account, so suggestions will be an empty array until query history accumulates.
+- `GET /api/search?text=<query>&hitsPerPage=3` → server proxies to search API for product hit previews.
+- **Dropdown layout**: two-column (suggestions left, products right) when suggestions are present; collapses to single-column products-only when suggestions array is empty. Hidden on outside click, Escape, or Enter.
+- "View all results" button and Enter both navigate to the full search results page (`state.page = 'search'`).
+
+**Full search results page** — `buildSearch()` renders the shell; `_doSearch()` fetches and populates it:
+- `GET /api/search?text=<query>&hitsPerPage=12&page=<n>&semanticRatio=1&facets=*&...` — `facets=*` requests all facet data. Server passes the raw query string through to `https://search-api.abtasty.com/search?index={abtId}_Catalog&...`.
+- Results show product image (`img_link`), title, and price. Clicking opens `hit.link` in a new tab.
+- **Facet sidebar**: rendered by `_renderFacets()` from `data.facets`. List facets → chip toggles; range facets → min/max inputs with Apply. Sidebar hidden (and layout collapses) when no facets returned.
+- **Sort**: `_renderControls()` renders a sort dropdown (`price:asc`, `price:desc`, `name:asc`, `name:desc`, relevance).
+- **Load more**: append mode — `_currentPage++`, `_doSearch(undefined, true)` merges new hits into `_accHits`.
+- Filters use bracket notation: `filters[field][]=value` for list, `filters[price][0][operator]=>=&filters[price][0][value]=N` for range.
+
+**Key JS functions**: `_bindNavSearch()`, `_doNavSearch()`, `_showNavDropdown()`, `_hideNavDropdown()`, `_viewAllSearch()`, `_buildSearchParams()`, `_doSearch()`, `_renderControls()`, `_renderFacets()`, `_renderAccHits()`, `_renderLoadMore()`.
 
 ## Adding a New Feature Flag
 
