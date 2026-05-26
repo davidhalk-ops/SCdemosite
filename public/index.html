@@ -2394,7 +2394,7 @@ function _renderFacets() {
     const { type, values } = facet;
     const label     = field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
     const hasActive = field === 'price' ? (_priceMin !== '' || _priceMax !== '') : !!_activeFilters[field];
-    const dot       = hasActive ? ' <span style="color:var(--red);font-size:11px">●</span>' : '';
+    const dot       = hasActive ? '<span style="width:6px;height:6px;background:var(--red);border-radius:50%;display:inline-block;margin-left:5px;flex-shrink:0;vertical-align:middle"></span>' : '';
 
     if (type === 'list' && Array.isArray(values) && values.length) {
       const chips = values.map(entry => {
@@ -2404,7 +2404,7 @@ function _renderFacets() {
         return `<button class="search-facet-chip${on ? ' active' : ''}" data-field="${_escHtml(field)}" data-val="${_escHtml(val)}">${_escHtml(val)} <span style="opacity:0.5;font-size:11px">${count}</span></button>`;
       }).join('');
       html += `<div class="search-facet-section"><details open>
-        <summary>${_escHtml(label)}${dot}<span class="search-facet-chevron">▼</span></summary>
+        <summary><span style="display:flex;align-items:center">${_escHtml(label)}${dot}</span><span class="search-facet-chevron">▼</span></summary>
         <div class="search-facet-body">${chips}</div>
       </details></div>`;
 
@@ -2412,7 +2412,7 @@ function _renderFacets() {
       const min = values.min ?? values.Min ?? 0;
       const max = values.max ?? values.Max ?? 0;
       html += `<div class="search-facet-section"><details open>
-        <summary>${_escHtml(label)}${dot}<span class="search-facet-chevron">▼</span></summary>
+        <summary><span style="display:flex;align-items:center">${_escHtml(label)}${dot}</span><span class="search-facet-chevron">▼</span></summary>
         <div class="search-facet-body">
           <div class="search-range-inputs">
             <input id="facet-price-min" type="number" placeholder="${Math.floor(min)}" value="${_escHtml(_priceMin)}">
