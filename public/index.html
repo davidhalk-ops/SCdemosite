@@ -2266,6 +2266,7 @@ function _buildSearchParams(page) {
     `hitsPerPage=12`,
     `page=${page}`,
     `semanticRatio=1`,
+    `facets=*`,
   ];
   if (_sortBy) p.push(`sort=${_sortBy}`);
 
