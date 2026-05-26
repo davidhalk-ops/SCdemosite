@@ -34,6 +34,7 @@ Copy `.env.example` to `.env` and populate:
 | `ENCRYPTION_KEY` | 64-char hex key for AES-256-GCM credential encryption — **required for persistence across restarts**; auto-generated (ephemeral) if unset |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL — set automatically by the Upstash Redis integration in the Vercel Marketplace. Required for cross-browser credential restore. |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token — set automatically by the same integration. |
+| `CATALOG_API_KEY` | Wingify Commerce Catalog API JWT — used for catalog integration. Scoped to `catalog_api`. |
 
 ## Architecture
 
