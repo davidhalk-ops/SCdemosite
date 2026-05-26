@@ -2403,7 +2403,7 @@ function _renderFacets() {
         const on    = _activeFilters[field]?.has(val);
         return `<button class="search-facet-chip${on ? ' active' : ''}" data-field="${_escHtml(field)}" data-val="${_escHtml(val)}">${_escHtml(val)} <span style="opacity:0.5;font-size:11px">${count}</span></button>`;
       }).join('');
-      html += `<div class="search-facet-section"><details open>
+      html += `<div class="search-facet-section"><details>
         <summary><span style="display:flex;align-items:center">${_escHtml(label)}${dot}</span><span class="search-facet-chevron">▼</span></summary>
         <div class="search-facet-body">${chips}</div>
       </details></div>`;
@@ -2411,7 +2411,7 @@ function _renderFacets() {
     } else if (type === 'range' && values != null) {
       const min = values.min ?? values.Min ?? 0;
       const max = values.max ?? values.Max ?? 0;
-      html += `<div class="search-facet-section"><details open>
+      html += `<div class="search-facet-section"><details>
         <summary><span style="display:flex;align-items:center">${_escHtml(label)}${dot}</span><span class="search-facet-chevron">▼</span></summary>
         <div class="search-facet-body">
           <div class="search-range-inputs">
