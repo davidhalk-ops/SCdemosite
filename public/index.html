@@ -1431,6 +1431,7 @@ function openCredentials() {
       <input id="cred-abt-id" type="text" value="${siteConfig.abtId || ''}" autocomplete="off">
     </div>
     <button class="creds-save-btn" id="creds-save-btn" onclick="saveCredentials()">Save Changes</button>
+    <button class="creds-save-btn" id="creds-setup-flags-btn" onclick="retrySetupFlags()" style="background:var(--pine);margin-top:0">Re-run Flag Setup</button>
     <button class="creds-reset-btn" onclick="resetCredentials()">Reset All Credentials</button>
   `;
 }
@@ -1488,6 +1489,27 @@ async function saveCredentials() {
     }
   } catch(e) {}
   btn.disabled = false; btn.textContent = 'Save Changes';
+}
+
+async function retrySetupFlags() {
+  const btn = document.getElementById('creds-setup-flags-btn');
+  btn.disabled = true; btn.textContent = 'Setting up flags…';
+  try {
+    const r    = await fetch('/api/setup-flags', { method: 'POST' });
+    const data = await r.json();
+    console.log('[setup-flags]', JSON.stringify(data));
+    const errors = Object.entries(data.results || {}).filter(([,v]) => v.error);
+    if (errors.length) {
+      alert('Some flags failed:\n' + errors.map(([k,v]) => `${k}: ${v.error}`).join('\n'));
+    } else {
+      btn.textContent = 'Flags ready ✓';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Re-run Flag Setup'; }, 2000);
+      return;
+    }
+  } catch(e) {
+    alert('Flag setup failed: ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = 'Re-run Flag Setup';
 }
 
 async function resetCredentials() {

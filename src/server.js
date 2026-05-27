@@ -385,8 +385,8 @@ app.post('/api/setup-flags', async (req, res) => {
       featureKey:  'pricePromotion',
       featureType: 'PERMANENT',
       variables: [
-        { variableName: 'PromoBanner',     dataType: 'boolean', defaultValue: false },
-        { variableName: 'discountpercent', dataType: 'float',   defaultValue: 0     },
+        { variableName: 'PromoBanner',     dataType: 'string', defaultValue: 'false' },
+        { variableName: 'discountpercent', dataType: 'int',    defaultValue: 0       },
       ],
     },
   ];
