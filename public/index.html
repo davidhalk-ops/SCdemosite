@@ -697,6 +697,15 @@
   }
   .search-load-more-btn:hover { border-color: var(--gray); color: var(--black); }
 
+  /* ====== PROMO FLASH BAR ====== */
+  .promo-flash-bar {
+    background: var(--gold); color: var(--black);
+    text-align: center; padding: 10px 24px;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.2px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    animation: fadeIn 0.3s ease;
+  }
+
   /* ====== FRANCE THEME ====== */
   [data-theme="france"] {
     --red: #002395;
@@ -904,6 +913,15 @@ function applyTheme(theme) {
 
 // ====== SITE CONFIG (populated by boot) ======
 let siteConfig = {};
+
+// ====== PROMO STATE (resolved from pricePromotion flag) ======
+let _promoBannerEnabled = false;
+let _promoDiscount      = 0; // percentage, e.g. 15 = 15%
+
+function _discountedPrice(price) {
+  if (!_promoDiscount) return price;
+  return Math.round(price * (1 - _promoDiscount / 100));
+}
 
 // ====== STATE ======
 let state = {
@@ -1496,10 +1514,42 @@ function render() {
   loadFlaggedRecos();
 }
 
+// Resolves the pricePromotion flag from the visitor's FME account.
+// Returns true if state changed (caller should re-render).
+async function fetchPricePromoFlag() {
+  if (!vwoClientSide || !siteConfig.visitorId) return false;
+  try {
+    const flag    = await vwoClientSide.getFlag('pricePromotion', { id: siteConfig.visitorId });
+    const enabled = flag.isEnabled();
+    const raw     = enabled ? flag.getVariable('PromoBanner', false) : false;
+    const banner  = raw === true || raw === 'true';
+    const disc    = enabled ? (Number(flag.getVariable('discountpercent', 0)) || 0) : 0;
+    const changed = banner !== _promoBannerEnabled || disc !== _promoDiscount;
+    _promoBannerEnabled = banner;
+    _promoDiscount      = disc;
+    return changed;
+  } catch(e) {
+    return false;
+  }
+}
+
+function buildPromoBar() {
+  if (!_promoBannerEnabled || !_promoDiscount) return '';
+  const msg = currentTheme === 'france'
+    ? `🏷️ <strong>${_promoDiscount}% de réduction</strong> sur tout le site — remise appliquée automatiquement`
+    : `🏷️ <strong>${_promoDiscount}% off</strong> sitewide — discount applied automatically`;
+  return `<div class="promo-flash-bar">${msg}</div>`;
+}
+
 // Re-initialises the VWO client on every render so flag variables are always fresh.
 async function loadFlaggedRecos() {
   if (!siteConfig.hasCredentials) return;
   await initVwoClientSide(siteConfig.accountId, siteConfig.sdkKey);
+
+  // Resolve pricePromotion first — if state changed, re-render with correct prices/banner
+  const promoChanged = await fetchPricePromoFlag();
+  if (promoChanged) { render(); return; } // render() will call loadFlaggedRecos again; second pass promoChanged=false
+
   if (state.page === 'home') {
     fetchFlaggedReco('homepage_id', 'flag-reco-home', 'flag-grid-home', undefined, 'trending-section');
   }
@@ -1520,7 +1570,8 @@ function navigate(page, data = {}) {
 }
 
 function buildPage() {
-  const nav = buildNav();
+  const nav   = buildNav();
+  const promo = buildPromoBar();
   let content = '';
   if (state.page === 'home') content = buildHome();
   else if (state.page === 'collection') content = buildCollectionPage();
@@ -1529,7 +1580,7 @@ function buildPage() {
   else if (state.page === 'success') content = buildSuccess();
   else if (state.page === 'search') content = buildSearch();
   const footer = buildFooter();
-  return nav + content + footer;
+  return nav + promo + content + footer;
 }
 
 // ====== NAV ======
@@ -1658,20 +1709,21 @@ function buildProductCard(p) {
   const T = THEME_CONTENT[currentTheme];
   const tp = T.products[p.id] || {};
   const stars = Array.from({length:5}, (_,i) => `<span class="star${i >= Math.round(p.rating)?` empty`:``}">★</span>`).join('');
+  const displayPrice = _discountedPrice(p.price);
+  const strikePrice  = _promoDiscount > 0 ? p.price : p.oldPrice;
   return `
   <div class="product-card" onclick="navigate('pdp',{product:PRODUCTS.find(x=>x.id===${p.id})})">
     <div class="product-thumb" style="background:${p.thumbBg}">
       <span style="position:relative;z-index:1;font-size:72px">${tp.emoji || p.emoji}</span>
-      ${p.badge==='sale'?`<span class="product-badge-sale">SALE</span>`:''}
-      ${p.badge==='new'?`<span class="product-badge-new">NEW</span>`:''}
+      ${_promoDiscount > 0 ? `<span class="product-badge-sale">${_promoDiscount}% OFF</span>` : p.badge==='sale'?`<span class="product-badge-sale">SALE</span>`:p.badge==='new'?`<span class="product-badge-new">NEW</span>`:''}
     </div>
     <div class="product-info">
       <div class="product-stars">${stars}</div>
       <div class="product-name">${tp.name || p.name}</div>
       <div class="product-sub">${tp.sub || p.sub}</div>
       <div class="product-price-row">
-        <span class="product-price">${T.priceTag(p.price)}</span>
-        ${p.oldPrice?`<span class="product-price-old">${T.priceTag(p.oldPrice)}</span>`:''}
+        <span class="product-price">${T.priceTag(displayPrice)}</span>
+        ${strikePrice ? `<span class="product-price-old">${T.priceTag(strikePrice)}</span>` : ''}
       </div>
     </div>
   </div>`;
@@ -1764,8 +1816,10 @@ function buildPDP() {
             <span style="font-size:13px;color:var(--gray)">${p.reviews} reviews</span>
           </div>
           <div class="pdp-price-row" style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
-            <span class="pdp-price">${T.priceTag(p.price)}</span>
-            ${p.oldPrice?`<span class="pdp-price-old">${T.priceTag(p.oldPrice)}</span><span style="font-size:13px;background:var(--red-light);color:var(--red);padding:3px 8px;border-radius:3px;font-weight:700">${T.pdpSave(p.oldPrice-p.price)}</span>`:''}
+            <span class="pdp-price">${T.priceTag(_discountedPrice(p.price))}</span>
+            ${_promoDiscount > 0
+              ? `<span class="pdp-price-old">${T.priceTag(p.price)}</span><span style="font-size:13px;background:var(--gold-light);color:var(--black);padding:3px 8px;border-radius:3px;font-weight:700">${_promoDiscount}% off</span>`
+              : p.oldPrice ? `<span class="pdp-price-old">${T.priceTag(p.oldPrice)}</span><span style="font-size:13px;background:var(--red-light);color:var(--red);padding:3px 8px;border-radius:3px;font-weight:700">${T.pdpSave(p.oldPrice-p.price)}</span>` : ''}
           </div>
           <p class="pdp-desc">${displayDesc}</p>
           <div class="pdp-options-label">${T.optionColour}</div>
@@ -1782,7 +1836,7 @@ function buildPDP() {
             <span class="qty-val" id="qty-val">${qty}</span>
             <button class="qty-btn" id="qty-plus">+</button>
           </div>
-          <button class="pdp-add" id="add-to-cart">${T.addToCart(p.price, qty)}</button>
+          <button class="pdp-add" id="add-to-cart">${T.addToCart(_discountedPrice(p.price), qty)}</button>
           <button class="pdp-wishlist">${T.addToWishlist}</button>
           <div class="pdp-features">
             <div class="pdp-feature"><span>🚚</span> ${T.featureShipping}</div>
@@ -1817,7 +1871,7 @@ function buildPDP() {
 // ====== CHECKOUT ======
 function buildCheckout() {
   const T = THEME_CONTENT[currentTheme];
-  const cartTotal = state.cart.reduce((sum,i) => sum + i.product.price * i.qty, 0);
+  const cartTotal = state.cart.reduce((sum,i) => sum + _discountedPrice(i.product.price) * i.qty, 0);
   const shipping = cartTotal >= 100 ? 0 : 12.99;
   const tax = cartTotal * T.taxRate;
   const total = cartTotal + shipping + tax;
@@ -1907,7 +1961,7 @@ function buildCheckout() {
                 <div class="order-item-name">${tp.name || i.product.name}</div>
                 <div class="order-item-sub">${T.optionSize}: ${i.size} · ${T.optionQty}: ${i.qty}</div>
               </div>
-              <div class="order-item-price">${T.orderItemPrice(i.product.price*i.qty)}</div>
+              <div class="order-item-price">${T.orderItemPrice(_discountedPrice(i.product.price)*i.qty)}</div>
             </div>`;}).join('')}
             <div class="order-totals">
               <div class="total-row"><span>${T.orderSubtotal}</span><span>${T.formatTotal(cartTotal)}</span></div>

@@ -358,62 +358,75 @@ app.post('/api/check-theme', async (req, res) => {
 });
 
 // POST /api/setup-flags
-// Checks the visitor's VWO account for the Recommendations flag.
-// If it exists, stops. If not, creates it with 3 string variables (homepage, pdp, cart IDs).
+// Checks the visitor's VWO account for required flags and creates any that are missing.
+// Flags managed: recommendations, pricePromotion
 app.post('/api/setup-flags', async (req, res) => {
   const email = visitorEmailMap.get(req.visitorId);
   const c     = email ? credStore.get(email) : null;
   if (!c?.apiKey) return res.status(400).json({ error: 'No API key stored' });
 
   const apiKey = decrypt(c.apiKey);
-  const FLAG_KEY = 'recommendations';
-  const base    = 'https://app.vwo.com/api/v2/accounts/current';
+  const base   = 'https://app.vwo.com/api/v2/accounts/current';
   const headers = { 'token': apiKey, 'Content-Type': 'application/json' };
 
+  const FLAGS = [
+    {
+      name:        'Recommendations',
+      featureKey:  'recommendations',
+      featureType: 'PERMANENT',
+      variables: [
+        { variableName: 'homepage_id', dataType: 'string', defaultValue: 'none' },
+        { variableName: 'pdp_id',      dataType: 'string', defaultValue: 'none' },
+        { variableName: 'cart_id',     dataType: 'string', defaultValue: 'none' },
+      ],
+    },
+    {
+      name:        'Price Promotion',
+      featureKey:  'pricePromotion',
+      featureType: 'PERMANENT',
+      variables: [
+        { variableName: 'PromoBanner',     dataType: 'boolean', defaultValue: false },
+        { variableName: 'discountpercent', dataType: 'float',   defaultValue: 0     },
+      ],
+    },
+  ];
+
   try {
-    // Step 1: Check if Recommendations flag already exists
+    // Fetch all existing flags
     const listRes = await fetch(`${base}/features?limit=25`, { headers });
     if (!listRes.ok) {
       const body = await listRes.text();
       console.error('[VWO API] list features failed:', listRes.status, body);
       return res.status(502).json({ error: 'VWO API error', status: listRes.status, detail: body });
     }
-    const listData = await listRes.json();
-    // Response is a bare array or wrapped in _data
-    const existing = Array.isArray(listData) ? listData : (listData._data ?? []);
+    const listData    = await listRes.json();
+    const existing    = Array.isArray(listData) ? listData : (listData._data ?? []);
     const existingKeys = existing.map(f => f.featureKey ?? '');
 
-    if (existingKeys.includes(FLAG_KEY)) {
-      console.log('[VWO API] Recommendations flag already exists — skipping creation');
-      return res.json({ created: false, message: 'Recommendations flag already exists' });
+    // Create any flags that don't exist yet
+    const results = {};
+    for (const flag of FLAGS) {
+      if (existingKeys.includes(flag.featureKey)) {
+        console.log(`[VWO API] ${flag.name} flag already exists — skipping`);
+        results[flag.featureKey] = { created: false };
+        continue;
+      }
+      const createRes = await fetch(`${base}/features`, {
+        method: 'POST', headers,
+        body: JSON.stringify(flag),
+      });
+      if (!createRes.ok) {
+        const body = await createRes.text();
+        console.error(`[VWO API] create ${flag.featureKey} failed:`, createRes.status, body);
+        results[flag.featureKey] = { created: false, error: body };
+      } else {
+        const created = await createRes.json();
+        const flagId  = created?._data?.id ?? null;
+        console.log(`[VWO API] ${flag.name} flag created, id:`, flagId);
+        results[flag.featureKey] = { created: true, id: flagId };
+      }
     }
-
-    // Step 2: Create the Recommendations flag with 3 ID variables
-    const createRes = await fetch(`${base}/features`, {
-      method:  'POST',
-      headers,
-      body: JSON.stringify({
-        name:        'Recommendations',
-        featureKey:  FLAG_KEY,
-        featureType: 'PERMANENT',
-        variables: [
-          { variableName: 'homepage_id', dataType: 'string', defaultValue: 'none' },
-          { variableName: 'pdp_id',      dataType: 'string', defaultValue: 'none' },
-          { variableName: 'cart_id',     dataType: 'string', defaultValue: 'none' },
-        ],
-      }),
-    });
-
-    if (!createRes.ok) {
-      const body = await createRes.text();
-      console.error('[VWO API] create feature failed:', createRes.status, body);
-      return res.status(502).json({ error: 'Failed to create flag', status: createRes.status, detail: body });
-    }
-
-    const created = await createRes.json();
-    const flagId = created?._data?.id ?? null;
-    console.log('[VWO API] Recommendations flag created successfully, id:', flagId);
-    res.json({ created: true, message: 'Recommendations flag created', id: flagId });
+    res.json({ results });
   } catch (e) {
     console.error('[VWO API] setup-flags error:', e.message);
     res.status(500).json({ error: e.message });
