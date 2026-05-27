@@ -964,19 +964,25 @@ async function fetchRecoGrid(gridId, excludeId, recoUrl) {
   if (!grid) return;
   try {
     if (recoUrl) {
-      const res = await fetch(
-        `${recoUrl}?fields=${encodeURIComponent(ABTASTY_FIELDS)}`,
-        { headers: { authorization: ABTASTY_RECO_TOKEN } }
-      );
+      const fullUrl = `${recoUrl}?fields=${encodeURIComponent(ABTASTY_FIELDS)}`;
+      console.group(`[Recos] fetchRecoGrid — ${gridId}`);
+      console.log('URL:', fullUrl);
+      console.log('Token set:', !!ABTASTY_RECO_TOKEN, ABTASTY_RECO_TOKEN ? `(${ABTASTY_RECO_TOKEN.slice(0,20)}...)` : '(empty)');
+      const res = await fetch(fullUrl, { headers: { authorization: ABTASTY_RECO_TOKEN } });
+      console.log('HTTP status:', res.status, res.statusText);
+      const text = await res.text();
+      console.log('Response body:', text.slice(0, 500));
+      console.groupEnd();
       if (res.ok) {
-        const data = await res.json();
+        const data = JSON.parse(text);
         if (data.items && data.items.length) {
           grid.innerHTML = data.items.map(p => buildApiProductCard(p)).join('');
           return;
         }
+        console.warn('[Recos] No items in response:', data);
       }
     }
-  } catch(e) {}
+  } catch(e) { console.error('[Recos] fetchRecoGrid error:', e.message); }
   // Fallback: static products, excluding current item
   const fallback = PRODUCTS.filter(p => p.id !== excludeId).slice(0, 4);
   grid.innerHTML = fallback.map(p => buildProductCard(p)).join('');
