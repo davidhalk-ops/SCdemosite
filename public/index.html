@@ -957,7 +957,6 @@ let state = {
 // ====== AB TASTY RECOMMENDATIONS ======
 let ABTASTY_RECO_URL = 'https://uc-info.eu.abtasty.com/v1/reco/1120/recos/2de4a962-5c54-4129-9fe7-28edd06a2141';
 let ABTASTY_RECO_TOKEN = '';
-const ABTASTY_FIELDS = JSON.stringify(['img_link', 'id', 'price', 'name']);
 
 // Generic skeleton-loading reco carousel — tries the API if recoUrl is provided, falls back to static products
 async function fetchRecoGrid(gridId, excludeId, recoUrl) {
@@ -965,25 +964,17 @@ async function fetchRecoGrid(gridId, excludeId, recoUrl) {
   if (!grid) return;
   try {
     if (recoUrl) {
-      const fullUrl = `${recoUrl}?fields=${encodeURIComponent(ABTASTY_FIELDS)}`;
-      console.group(`[Recos] fetchRecoGrid — ${gridId}`);
-      console.log('URL:', fullUrl);
-      console.log('Token set:', !!ABTASTY_RECO_TOKEN, ABTASTY_RECO_TOKEN ? `(${ABTASTY_RECO_TOKEN.slice(0,20)}...)` : '(empty)');
-      const res = await fetch(fullUrl, { headers: { authorization: ABTASTY_RECO_TOKEN } });
-      console.log('HTTP status:', res.status, res.statusText);
-      const text = await res.text();
-      console.log('Response body:', text.slice(0, 500));
-      console.groupEnd();
+      const res = await fetch(recoUrl, { headers: { authorization: ABTASTY_RECO_TOKEN } });
       if (res.ok) {
-        const data = JSON.parse(text);
-        if (data.items && data.items.length) {
+        const data = await res.json();
+        // Only render API items when full product fields are present (catalog indexed)
+        if (data.items && data.items.length && data.items[0].img_link) {
           grid.innerHTML = data.items.map(p => buildApiProductCard(p)).join('');
           return;
         }
-        console.warn('[Recos] No items in response:', data);
       }
     }
-  } catch(e) { console.error('[Recos] fetchRecoGrid error:', e.message); }
+  } catch(e) {}
   // Fallback: static products, excluding current item
   const fallback = PRODUCTS.filter(p => p.id !== excludeId).slice(0, 4);
   grid.innerHTML = fallback.map(p => buildProductCard(p)).join('');
@@ -1000,20 +991,12 @@ function getCarouselTitle(key) {
 // If the flag is disabled or the variable is still "none", the static section stays visible.
 async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, staticId) {
   const section = document.getElementById(sectionId);
-  console.group(`[Recos] fetchFlaggedReco — ${variableKey}`);
-  console.log('vwoClientSide ready:', !!vwoClientSide);
-  console.log('section found:', !!section);
-  if (!section || !vwoClientSide) { console.groupEnd(); return; }
+  if (!section || !vwoClientSide) return;
 
   try {
     const flag = await vwoClientSide.getFlag('recommendations', { id: siteConfig.visitorId || 'anonymous' });
     const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
-    console.log('flag.isEnabled():', isEnabled);
-    console.log(`flag.getVariable('${variableKey}')`, recoModelId);
-    console.log('recoId (site):', siteConfig.recoId);
-    console.log('recoToken set:', !!siteConfig.recoToken);
-    console.groupEnd();
     if (recoModelId === 'none') return; // leave static section visible
 
     // Valid reco ID — swap static section for the flagged carousel
@@ -1027,10 +1010,7 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
 
     const siteId = siteConfig.recoId || '1120';
     fetchRecoGrid(gridId, excludeId, `https://uc-info.eu.abtasty.com/v1/reco/${siteId}/recos/${recoModelId}`);
-  } catch(e) {
-    console.error('[Recos] fetchFlaggedReco error:', e.message);
-    console.groupEnd();
-  }
+  } catch(e) {}
 }
 
 function buildSkeletonCard() {
