@@ -964,11 +964,10 @@ async function fetchRecoGrid(gridId, excludeId, recoUrl) {
   if (!grid) return;
   try {
     if (recoUrl) {
-      const res = await fetch(recoUrl, { headers: { authorization: ABTASTY_RECO_TOKEN } });
+      const res = await fetch(`${recoUrl}?fields=id&fields=price&fields=name&fields=img_link`, { headers: { authorization: ABTASTY_RECO_TOKEN } });
       if (res.ok) {
         const data = await res.json();
-        // Only render API items when full product fields are present (catalog indexed)
-        if (data.items && data.items.length && data.items[0].img_link) {
+        if (data.items && data.items.length) {
           grid.innerHTML = data.items.map(p => buildApiProductCard(p)).join('');
           return;
         }
