@@ -993,12 +993,20 @@ function getCarouselTitle(key) {
 // If the flag is disabled or the variable is still "none", the static section stays visible.
 async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, staticId) {
   const section = document.getElementById(sectionId);
-  if (!section || !vwoClientSide) return;
+  console.group(`[Recos] fetchFlaggedReco — ${variableKey}`);
+  console.log('vwoClientSide ready:', !!vwoClientSide);
+  console.log('section found:', !!section);
+  if (!section || !vwoClientSide) { console.groupEnd(); return; }
 
   try {
     const flag = await vwoClientSide.getFlag('recommendations', { id: siteConfig.visitorId || 'anonymous' });
     const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
+    console.log('flag.isEnabled():', isEnabled);
+    console.log(`flag.getVariable('${variableKey}')`, recoModelId);
+    console.log('recoId (site):', siteConfig.recoId);
+    console.log('recoToken set:', !!siteConfig.recoToken);
+    console.groupEnd();
     if (recoModelId === 'none') return; // leave static section visible
 
     // Valid reco ID — swap static section for the flagged carousel
@@ -1012,7 +1020,10 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
 
     const siteId = siteConfig.recoId || '1120';
     fetchRecoGrid(gridId, excludeId, `https://uc-info.eu.abtasty.com/v1/reco/${siteId}/recos/${recoModelId}`);
-  } catch(e) { /* leave static section visible on error */ }
+  } catch(e) {
+    console.error('[Recos] fetchFlaggedReco error:', e.message);
+    console.groupEnd();
+  }
 }
 
 function buildSkeletonCard() {
