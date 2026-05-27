@@ -989,33 +989,30 @@ function getCarouselTitle(key) {
 }
 
 // Evaluates the recommendations flag and renders the carousel for `variableKey`.
-// When the SDK is ready, always replaces the static section (staticId) with the flagged one.
-// Shows a setup prompt if the flag isn't enabled yet or the variable is still "none".
+// Only swaps out the static section (staticId) when a valid reco model ID is configured.
+// If the flag is disabled or the variable is still "none", the static section stays visible.
 async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, staticId) {
   const section = document.getElementById(sectionId);
   if (!section || !vwoClientSide) return;
 
-  if (staticId) {
-    const staticSec = document.getElementById(staticId);
-    if (staticSec) staticSec.style.display = 'none';
-  }
-  section.querySelector('[data-reco-title]').textContent = getCarouselTitle(variableKey);
-  section.querySelector('[data-reco-badge]').textContent = 'Wingify Commerce — Recommendations';
-  section.style.display = '';
-
-  const showPlaceholder = () => {
-    section.querySelector('[data-reco-grid]').style.display = 'none';
-    section.querySelector('[data-reco-placeholder]').style.display = 'flex';
-  };
-
   try {
     const flag = await vwoClientSide.getFlag('recommendations', { id: siteConfig.visitorId || 'anonymous' });
-    const isEnabled = flag.isEnabled();
+    const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
-    if (recoModelId === 'none') { showPlaceholder(); return; }
+    if (recoModelId === 'none') return; // leave static section visible
+
+    // Valid reco ID — swap static section for the flagged carousel
+    if (staticId) {
+      const staticSec = document.getElementById(staticId);
+      if (staticSec) staticSec.style.display = 'none';
+    }
+    section.querySelector('[data-reco-title]').textContent = getCarouselTitle(variableKey);
+    section.querySelector('[data-reco-badge]').textContent = 'Wingify Commerce — Recommendations';
+    section.style.display = '';
+
     const siteId = siteConfig.recoId || '1120';
     fetchRecoGrid(gridId, excludeId, `https://uc-info.eu.abtasty.com/v1/reco/${siteId}/recos/${recoModelId}`);
-  } catch(e) { showPlaceholder(); }
+  } catch(e) { /* leave static section visible on error */ }
 }
 
 function buildSkeletonCard() {
