@@ -1147,25 +1147,24 @@ function loadRecosTag(siteId) {
 }
 
 // ====== EMOTIONS AI ======
-const EMOTIONS_AI_SEGMENTS = ['Safety','Competition','Understanding','Attention','Comfort','Quality','Notoriety','Immediacy','Community','Change'];
+(function() {
+  const segments = ['Safety','Competition','Understanding','Attention','Comfort','Quality','Notoriety','Immediacy','Community','Change'];
+  const cookieName = 'EmotionsAI';
+  const existing = document.cookie.match(new RegExp('(?:^|; )' + cookieName + '=([^;]*)'));
+  if (!existing) {
+    const value = segments[Math.floor(Math.random() * segments.length)];
+    const expires = new Date(Date.now() + 365 * 864e5).toUTCString();
+    document.cookie = `${cookieName}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+  }
+})();
 
 function getCookie(name) {
   const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-function setCookie(name, value, days) {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
-}
-
 function getEmotionsAiSegment() {
-  let segment = getCookie('EmotionsAI');
-  if (!segment) {
-    segment = EMOTIONS_AI_SEGMENTS[Math.floor(Math.random() * EMOTIONS_AI_SEGMENTS.length)];
-    setCookie('EmotionsAI', segment, 365);
-  }
-  return segment;
+  return getCookie('EmotionsAI');
 }
 
 // ====== VWO CLIENT-SIDE SDK ======
@@ -1679,7 +1678,9 @@ async function loadFlaggedRecos() {
   await initVwoClientSide(siteConfig.accountId, siteConfig.sdkKey);
 
   if (vwoClientSide) {
-    vwoClientSide.setAttribute({ emotionsAiSegment: getEmotionsAiSegment() }, getVwoContext());
+    const attributes = { emotionsAiSegment: getEmotionsAiSegment() };
+    const userContext = getVwoContext();
+    vwoClientSide.setAttribute(attributes, userContext);
   }
 
   // Resolve pricePromotion first — if state changed, re-render with correct prices/banner
@@ -2774,8 +2775,6 @@ async function boot() {
   if (!localStorage.getItem(VWO_ID_KEY) && siteConfig.visitorId) {
     localStorage.setItem(VWO_ID_KEY, siteConfig.visitorId);
   }
-  // Assign EmotionsAI segment immediately on first visit — independent of SDK init
-  getEmotionsAiSegment();
   applyTheme(siteConfig.theme || 'canada');
   loadRecosTag(siteConfig.recoId || '1120');
   render();
