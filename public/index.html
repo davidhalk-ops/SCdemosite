@@ -2189,7 +2189,7 @@ function buildFooter() {
     <div class="footer-bottom">
       <p>${T.footerCopyright}</p>
       <div style="display:flex;align-items:center;gap:14px">
-        <button class="footer-manage-link" onclick="openCredentials()">Manage Credentials</button>
+        ${window.location.hash === '#admin' ? `<button class="footer-manage-link" onclick="openCredentials()">Manage Credentials</button>` : ''}
         <a href="${T.searchGuideHref}" target="_blank" rel="noopener" class="footer-manage-link" style="text-decoration:underline">${T.searchGuideLabel}</a>
         <div class="abt-powered">
           Powered by <strong>Wingify Commerce</strong> — Search · Merch · Recommendations
