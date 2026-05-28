@@ -830,7 +830,7 @@ window._vwo_code || (function() {
 <div id="app"></div>
 
 <script>
-console.log('[TrueNorth] script executing');
+console.warn('[TrueNorth] script executing');
 // ====== DATA ======
 const PRODUCTS = [
   { id: 1, name: 'Voyageur Parka', sub: 'Winter Collection', price: 349, oldPrice: 449, emoji: '🧥', color: '#1A1A18', badge: 'sale', rating: 4.8, reviews: 124, category: 'outerwear', desc: 'Engineered for Canadian winters, the Voyageur Parka features 800-fill goose down insulation and a water-resistant shell. Heritage styling meets modern warmth technology.', sizes: ['XS','S','M','L','XL','XXL'], colors: ['#1A1A18','#C8102E','#2D5016'], thumbBg: '#E8E5DC', extras: ['🧥','🧤','🧣'] },
@@ -1664,7 +1664,7 @@ async function loadFlaggedRecos() {
   window.VWO = window.VWO || [];
   VWO.visitor = VWO.visitor || function() { VWO.push(['visitor'].concat([].slice.call(arguments))); };
   VWO.visitor({ emotionsAiSegment: emotionsAiSegment });
-  console.log('[EmotionsAI] pushed segment:', emotionsAiSegment);
+  console.warn('[EmotionsAI] pushed segment:', emotionsAiSegment);
 
   // Resolve pricePromotion first — if state changed, re-render with correct prices/banner
   const promoChanged = await fetchPricePromoFlag();
@@ -1722,11 +1722,11 @@ function _loginKeydown(e) {
 function submitLogin() {
   const input = document.getElementById('login-username');
   const username = (input?.value || '').trim();
-  console.log('[Login] input element:', input, '| value:', username);
+  console.warn('[Login] input element:', input, '| value:', username);
   if (!username) { input?.focus(); return; }
   activeUserId = username;
   localStorage.setItem(VWO_ID_KEY, username);
-  console.log('[Login] localStorage set:', VWO_ID_KEY, '=', localStorage.getItem(VWO_ID_KEY));
+  console.warn('[Login] localStorage set:', VWO_ID_KEY, '=', localStorage.getItem(VWO_ID_KEY));
   closeLoginModal();
   render();
   loadFlaggedRecos();
