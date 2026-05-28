@@ -77,6 +77,8 @@ Single-file SPA (HTML + inline CSS + inline JS). No bundler or framework. The fr
 
 ### Onboarding Gate (`gateState`)
 
+**Currently bypassed** — `boot()` always loads credentials for `david.halk@abtasty.com` and never calls `showGate()`. The gate code remains in place for when it is re-enabled.
+
 8-step flow rendered by `buildGateHTML()` / `handleGateNext()`. Every step except `email` has a ← Back button. Navigation is driven by `GATE_BACK_MAP` and `gateBack()`.
 
 | Step key | Collects | Notes |
@@ -94,7 +96,19 @@ After the final step, `siteConfig` is updated in-memory, credentials are saved t
 
 ### Manage Credentials Panel
 
-Footer link opens `#creds-overlay`. Displays all credentials including **Wingify Commerce Identifier** and **VWO Authorization Key** (password field). The VWO API Key is intentionally not returned by `GET /api/config`. Saving updates the server store (disk + Redis) and refreshes the `tn_creds` httpOnly cookie.
+Footer link opens `#creds-overlay`. **Only visible when `#admin` is appended to the URL** (e.g. `https://yoursite.com/#admin`). Displays all credentials including **Wingify Commerce Identifier** and **VWO Authorization Key** (password field). The VWO API Key is intentionally not returned by `GET /api/config`. Saving updates the server store (disk + Redis) and refreshes the `tn_creds` httpOnly cookie.
+
+### Mock Login
+
+A **Login** button in the top-right nav opens a modal with username + password fields. The password is never validated. On sign-in:
+- `activeUserId` is set to the username in memory
+- `localStorage` key `tn_vwo_user_id` is updated to the username
+- All client-side `getFlag` calls use the username as the visitor ID
+- `customVariables: { loggedin: true }` is included in the VWO user context
+
+On sign-out, `tn_vwo_user_id` reverts to the server-assigned UUID (`siteConfig.visitorId`). The stored credentials in Manage Credentials are never affected.
+
+**localStorage key:** `tn_vwo_user_id` — stores the current VWO SDK visitor ID. Seeded from the server UUID on first visit. Updated on login/logout.
 
 ### Search
 
