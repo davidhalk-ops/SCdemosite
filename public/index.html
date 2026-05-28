@@ -987,6 +987,11 @@ let siteConfig = {};
 // ====== MOCK LOGIN ======
 let activeUserId = null;
 function getVwoUserId() { return activeUserId || siteConfig.email || 'anonymous'; }
+function getVwoContext() {
+  const ctx = { id: getVwoUserId() };
+  if (activeUserId) ctx.customVariables = { loggedin: true };
+  return ctx;
+}
 
 // ====== PROMO STATE (resolved from pricePromotion flag) ======
 let _promoBannerEnabled = false;
@@ -1052,7 +1057,7 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
   if (!section || !vwoClientSide) return;
 
   try {
-    const flag = await vwoClientSide.getFlag('recommendations', { id: getVwoUserId() });
+    const flag = await vwoClientSide.getFlag('recommendations', getVwoContext());
     const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
     if (recoModelId === 'none') return; // leave static section visible
@@ -1608,7 +1613,7 @@ function render() {
 async function fetchPricePromoFlag() {
   if (!vwoClientSide) return false;
   try {
-    const flag    = await vwoClientSide.getFlag('pricePromotion', { id: getVwoUserId() });
+    const flag    = await vwoClientSide.getFlag('pricePromotion', getVwoContext());
     const enabled = flag.isEnabled();
     const raw     = enabled ? flag.getVariable('PromoBanner', false) : false;
     const banner  = raw === true || raw === 'true';
