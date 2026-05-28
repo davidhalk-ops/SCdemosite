@@ -1147,25 +1147,8 @@ function loadRecosTag(siteId) {
 }
 
 // ====== EMOTIONS AI ======
-(function() {
-  const segments = ['Safety','Competition','Understanding','Attention','Comfort','Quality','Notoriety','Immediacy','Community','Change'];
-  const cookieName = 'EmotionsAI';
-  const existing = document.cookie.match(new RegExp('(?:^|; )' + cookieName + '=([^;]*)'));
-  if (!existing) {
-    const value = segments[Math.floor(Math.random() * segments.length)];
-    const expires = new Date(Date.now() + 365 * 864e5).toUTCString();
-    document.cookie = `${cookieName}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
-  }
-})();
-
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-function getEmotionsAiSegment() {
-  return getCookie('EmotionsAI');
-}
+const EMOTIONS_AI_SEGMENTS = ['Safety','Competition','Understanding','Attention','Comfort','Quality','Notoriety','Immediacy','Community','Change'];
+const emotionsAiSegment = EMOTIONS_AI_SEGMENTS[Math.floor(Math.random() * EMOTIONS_AI_SEGMENTS.length)];
 
 // ====== VWO CLIENT-SIDE SDK ======
 let vwoClientSide = null;
@@ -1678,7 +1661,7 @@ async function loadFlaggedRecos() {
   await initVwoClientSide(siteConfig.accountId, siteConfig.sdkKey);
 
   if (vwoClientSide) {
-    const attributes = { emotionsAiSegment: getEmotionsAiSegment() };
+    const attributes = { emotionsAiSegment: emotionsAiSegment };
     const userContext = getVwoContext();
     vwoClientSide.setAttribute(attributes, userContext);
   }
