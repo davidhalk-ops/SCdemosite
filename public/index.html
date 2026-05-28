@@ -986,7 +986,8 @@ let siteConfig = {};
 
 // ====== MOCK LOGIN ======
 let activeUserId = null;
-function getVwoUserId() { return activeUserId || siteConfig.visitorId || 'anonymous'; }
+const VWO_ID_KEY = 'tn_vwo_user_id';
+function getVwoUserId() { return localStorage.getItem(VWO_ID_KEY) || siteConfig.visitorId || 'anonymous'; }
 function getVwoContext() {
   const ctx = { id: getVwoUserId() };
   if (activeUserId) ctx.customVariables = { loggedin: true };
@@ -1717,6 +1718,7 @@ function submitLogin() {
   const username = (document.getElementById('login-username')?.value || '').trim();
   if (!username) { document.getElementById('login-username')?.focus(); return; }
   activeUserId = username;
+  localStorage.setItem(VWO_ID_KEY, username);
   closeLoginModal();
   render();
   loadFlaggedRecos();
@@ -1724,6 +1726,7 @@ function submitLogin() {
 
 function logoutUser() {
   activeUserId = null;
+  localStorage.setItem(VWO_ID_KEY, siteConfig.visitorId || 'anonymous');
   render();
   loadFlaggedRecos();
 }
@@ -2742,6 +2745,10 @@ async function boot() {
   if (siteConfig.recoId) {
     ABTASTY_RECO_URL   = `https://uc-info.eu.abtasty.com/v1/reco/${siteConfig.recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
     ABTASTY_RECO_TOKEN = siteConfig.recoToken || '';
+  }
+  // Seed localStorage with the server-assigned UUID if not already set
+  if (!localStorage.getItem(VWO_ID_KEY) && siteConfig.visitorId) {
+    localStorage.setItem(VWO_ID_KEY, siteConfig.visitorId);
   }
   applyTheme(siteConfig.theme || 'canada');
   loadRecosTag(siteConfig.recoId || '1120');
