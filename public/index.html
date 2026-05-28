@@ -2730,24 +2730,22 @@ function _bindNavSearch() {
 // ====== BOOT ======
 async function boot() {
   try {
-    siteConfig = await fetch('/api/config').then(r => r.json());
+    // Always load shared demo credentials; fall back to visitor cookie lookup
+    siteConfig = await fetch('/api/config?email=david.halk%40abtasty.com').then(r => r.json());
+    if (!siteConfig.hasCredentials) {
+      siteConfig = await fetch('/api/config').then(r => r.json());
+    }
   } catch(e) {
     siteConfig = { hasCredentials: false };
   }
 
-  if (siteConfig.hasCredentials) {
-    // Returning visitor with credentials — apply stored theme and render immediately
-    if (siteConfig.recoId) {
-      ABTASTY_RECO_URL   = `https://uc-info.eu.abtasty.com/v1/reco/${siteConfig.recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
-      ABTASTY_RECO_TOKEN = siteConfig.recoToken || '';
-    }
-    applyTheme(siteConfig.theme || 'canada');
-    loadRecosTag(siteConfig.recoId || '1120');
-    render();
-  } else {
-    // No credentials — show gate over a neutral blank page (no themed content rendered)
-    showGate();
+  if (siteConfig.recoId) {
+    ABTASTY_RECO_URL   = `https://uc-info.eu.abtasty.com/v1/reco/${siteConfig.recoId}/recos/2de4a962-5c54-4129-9fe7-28edd06a2141`;
+    ABTASTY_RECO_TOKEN = siteConfig.recoToken || '';
   }
+  applyTheme(siteConfig.theme || 'canada');
+  loadRecosTag(siteConfig.recoId || '1120');
+  render();
 }
 
 boot();
