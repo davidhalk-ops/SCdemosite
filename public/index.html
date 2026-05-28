@@ -986,7 +986,7 @@ let siteConfig = {};
 
 // ====== MOCK LOGIN ======
 let activeUserId = null;
-function getVwoUserId() { return activeUserId || siteConfig.email || 'anonymous'; }
+function getVwoUserId() { return activeUserId || siteConfig.visitorId || 'anonymous'; }
 function getVwoContext() {
   const ctx = { id: getVwoUserId() };
   if (activeUserId) ctx.customVariables = { loggedin: true };
