@@ -1028,7 +1028,7 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
   if (!section || !vwoClientSide) return;
 
   try {
-    const flag = await vwoClientSide.getFlag('recommendations', { id: siteConfig.visitorId || 'anonymous' });
+    const flag = await vwoClientSide.getFlag('recommendations', { id: siteConfig.email || 'anonymous' });
     const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
     if (recoModelId === 'none') return; // leave static section visible
@@ -1582,9 +1582,9 @@ function render() {
 // Resolves the pricePromotion flag from the visitor's FME account.
 // Returns true if state changed (caller should re-render).
 async function fetchPricePromoFlag() {
-  if (!vwoClientSide || !siteConfig.visitorId) return false;
+  if (!vwoClientSide || !siteConfig.email) return false;
   try {
-    const flag    = await vwoClientSide.getFlag('pricePromotion', { id: siteConfig.visitorId });
+    const flag    = await vwoClientSide.getFlag('pricePromotion', { id: siteConfig.email });
     const enabled = flag.isEnabled();
     const raw     = enabled ? flag.getVariable('PromoBanner', false) : false;
     const banner  = raw === true || raw === 'true';
