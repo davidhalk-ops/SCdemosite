@@ -966,15 +966,18 @@ async function fetchRecoGrid(gridId, excludeId, recoUrl) {
   try {
     if (recoUrl) {
       const res = await fetch(`${recoUrl}?fields=id&fields=price&fields=name&fields=img_link`, { headers: { authorization: ABTASTY_RECO_TOKEN } });
+      console.log('[Reco] status:', res.status, recoUrl);
       if (res.ok) {
         const data = await res.json();
+        console.log('[Reco] name:', data.name, '| items:', data.items?.length);
         if (data.items && data.items.length) {
           grid.innerHTML = data.items.map(p => buildApiProductCard(p)).join('');
-          return;
+          return data.name || null;
         }
       }
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[Reco] fetch error:', e); }
+  console.log('[Reco] falling back to static products');
   // Fallback: static products, excluding current item
   const fallback = PRODUCTS.filter(p => p.id !== excludeId).slice(0, 4);
   grid.innerHTML = fallback.map(p => buildProductCard(p)).join('');
@@ -1004,12 +1007,12 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
       const staticSec = document.getElementById(staticId);
       if (staticSec) staticSec.style.display = 'none';
     }
-    section.querySelector('[data-reco-title]').textContent = getCarouselTitle(variableKey);
     section.querySelector('[data-reco-badge]').textContent = 'Wingify Commerce — Recommendations';
     section.style.display = '';
 
     const siteId = siteConfig.recoId || '1120';
-    fetchRecoGrid(gridId, excludeId, `https://uc-info.eu.abtasty.com/v1/reco/${siteId}/recos/${recoModelId}`);
+    const recoName = await fetchRecoGrid(gridId, excludeId, `https://uc-info.eu.abtasty.com/v1/reco/${siteId}/recos/${recoModelId}`);
+    section.querySelector('[data-reco-title]').textContent = recoName || getCarouselTitle(variableKey);
   } catch(e) {}
 }
 
