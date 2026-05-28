@@ -1679,8 +1679,7 @@ async function loadFlaggedRecos() {
   await initVwoClientSide(siteConfig.accountId, siteConfig.sdkKey);
 
   if (vwoClientSide) {
-    const attributes = { emotionsAiSegment: getEmotionsAiSegment() };
-    vwoClientSide.setAttribute(attributes, getVwoContext());
+    vwoClientSide.setAttribute({ emotionsAiSegment: getEmotionsAiSegment() }, getVwoContext());
   }
 
   // Resolve pricePromotion first — if state changed, re-render with correct prices/banner
@@ -2775,6 +2774,8 @@ async function boot() {
   if (!localStorage.getItem(VWO_ID_KEY) && siteConfig.visitorId) {
     localStorage.setItem(VWO_ID_KEY, siteConfig.visitorId);
   }
+  // Assign EmotionsAI segment immediately on first visit — independent of SDK init
+  getEmotionsAiSegment();
   applyTheme(siteConfig.theme || 'canada');
   loadRecosTag(siteConfig.recoId || '1120');
   render();
