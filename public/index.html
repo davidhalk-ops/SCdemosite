@@ -728,6 +728,26 @@ window._vwo_code || (function() {
   [data-theme="france"] .promo-bg-1 { background: linear-gradient(135deg, #010116 0%, #001a6e 100%); }
   [data-theme="france"] .promo-bg-2 { background: linear-gradient(135deg, #1c0002 0%, #b52026 100%); }
 
+  /* ====== LOGIN MODAL ====== */
+  .login-modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(26,26,24,0.72); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .login-modal-overlay.hidden { display: none; }
+  .login-modal { background: white; border-radius: var(--radius-lg); padding: 36px; max-width: 400px; width: 100%; box-shadow: 0 24px 80px rgba(26,26,24,0.3); position: relative; animation: modalIn 0.25s ease; }
+  .login-modal h2 { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  .login-modal .login-subtitle { font-size: 13px; color: var(--gray); margin-bottom: 24px; }
+  .login-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .login-field label { font-size: 12px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; }
+  .login-field input { padding: 11px 14px; border: 1.5px solid var(--gray-light); border-radius: var(--radius); font-size: 14px; font-family: var(--font-body); background: white; color: var(--black); transition: border-color 0.15s; }
+  .login-field input:focus { outline: none; border-color: var(--red); }
+  .login-submit { width: 100%; padding: 14px; background: var(--red); color: white; border-radius: var(--radius); font-size: 15px; font-weight: 600; border: none; cursor: pointer; font-family: var(--font-body); transition: background 0.15s; margin-top: 8px; }
+  .login-submit:hover { background: var(--red-dark); }
+  .login-modal-close { position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 50%; background: var(--cream); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--gray); transition: background 0.15s; line-height: 1; }
+  .login-modal-close:hover { background: var(--gray-light); color: var(--black); }
+  .nav-login-btn { padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--gray-light); background: white; font-size: 13px; font-weight: 600; color: var(--black); cursor: pointer; font-family: var(--font-body); transition: all 0.15s; white-space: nowrap; }
+  .nav-login-btn:hover { border-color: var(--black); }
+  .nav-user-pill { display: flex; align-items: center; gap: 6px; padding: 5px 8px 5px 12px; border-radius: 20px; background: var(--cream); border: 1.5px solid var(--gray-light); font-size: 13px; font-weight: 600; color: var(--black); white-space: nowrap; }
+  .nav-user-pill .logout-btn { width: 20px; height: 20px; border-radius: 50%; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--gray); transition: color 0.15s; line-height: 1; }
+  .nav-user-pill .logout-btn:hover { color: var(--red); }
+
   /* ====== MOBILE RESPONSIVE ====== */
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; }
@@ -964,6 +984,10 @@ function applyTheme(theme) {
 // ====== SITE CONFIG (populated by boot) ======
 let siteConfig = {};
 
+// ====== MOCK LOGIN ======
+let activeUserId = null;
+function getVwoUserId() { return activeUserId || siteConfig.email || 'anonymous'; }
+
 // ====== PROMO STATE (resolved from pricePromotion flag) ======
 let _promoBannerEnabled = false;
 let _promoDiscount      = 0; // percentage, e.g. 15 = 15%
@@ -1028,7 +1052,7 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
   if (!section || !vwoClientSide) return;
 
   try {
-    const flag = await vwoClientSide.getFlag('recommendations', { id: siteConfig.email || 'anonymous' });
+    const flag = await vwoClientSide.getFlag('recommendations', { id: getVwoUserId() });
     const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
     if (recoModelId === 'none') return; // leave static section visible
@@ -1582,9 +1606,9 @@ function render() {
 // Resolves the pricePromotion flag from the visitor's FME account.
 // Returns true if state changed (caller should re-render).
 async function fetchPricePromoFlag() {
-  if (!vwoClientSide || !siteConfig.email) return false;
+  if (!vwoClientSide) return false;
   try {
-    const flag    = await vwoClientSide.getFlag('pricePromotion', { id: siteConfig.email });
+    const flag    = await vwoClientSide.getFlag('pricePromotion', { id: getVwoUserId() });
     const enabled = flag.isEnabled();
     const raw     = enabled ? flag.getVariable('PromoBanner', false) : false;
     const banner  = raw === true || raw === 'true';
@@ -1645,7 +1669,58 @@ function buildPage() {
   else if (state.page === 'success') content = buildSuccess();
   else if (state.page === 'search') content = buildSearch();
   const footer = buildFooter();
-  return nav + promo + content + footer;
+  return nav + promo + content + footer + buildLoginModal();
+}
+
+function buildLoginModal() {
+  return `
+  <div class="login-modal-overlay hidden" id="login-modal-overlay">
+    <div class="login-modal">
+      <button class="login-modal-close" onclick="closeLoginModal()">✕</button>
+      <h2>Sign In</h2>
+      <p class="login-subtitle">Enter a username to see their personalised experience. Any password is accepted.</p>
+      <div class="login-field">
+        <label for="login-username">Username</label>
+        <input type="text" id="login-username" placeholder="e.g. john.doe" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="login-submit" onclick="submitLogin()">Sign In</button>
+    </div>
+  </div>`;
+}
+
+function openLoginModal() {
+  document.getElementById('login-modal-overlay').classList.remove('hidden');
+  setTimeout(() => { const el = document.getElementById('login-username'); if (el) el.focus(); }, 50);
+  document.getElementById('login-modal-overlay').addEventListener('keydown', _loginKeydown);
+}
+
+function closeLoginModal() {
+  const el = document.getElementById('login-modal-overlay');
+  if (el) { el.classList.add('hidden'); el.removeEventListener('keydown', _loginKeydown); }
+}
+
+function _loginKeydown(e) {
+  if (e.key === 'Enter') submitLogin();
+  if (e.key === 'Escape') closeLoginModal();
+}
+
+function submitLogin() {
+  const username = (document.getElementById('login-username')?.value || '').trim();
+  if (!username) { document.getElementById('login-username')?.focus(); return; }
+  activeUserId = username;
+  closeLoginModal();
+  render();
+  loadFlaggedRecos();
+}
+
+function logoutUser() {
+  activeUserId = null;
+  render();
+  loadFlaggedRecos();
 }
 
 // ====== NAV ======
@@ -1671,6 +1746,10 @@ function buildNav() {
           <input id="nav-search-input" type="text" placeholder="${T.navSearch}"
             value="${_escHtml(state.page === 'search' ? _searchQuery : '')}" autocomplete="off">
         </div>
+        ${activeUserId
+          ? `<div class="nav-user-pill">👤 ${_escHtml(activeUserId)} <button class="logout-btn" onclick="logoutUser()" title="Sign out">✕</button></div>`
+          : `<button class="nav-login-btn" onclick="openLoginModal()">Login</button>`
+        }
         <button class="nav-icon" onclick="alert('${T.addToWishlist} — powered by Wingify Commerce recommendations!')">♡</button>
         <button class="nav-icon cart-badge" onclick="navigate('checkout')">
           🛒
