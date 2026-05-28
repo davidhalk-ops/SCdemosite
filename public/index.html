@@ -1661,17 +1661,14 @@ async function loadFlaggedRecos() {
   if (!siteConfig.hasCredentials) return;
   await initVwoClientSide(siteConfig.accountId, siteConfig.sdkKey);
 
-  function pushEmotionsAI() {
-    window.VWO = window.VWO || [];
-    VWO.visitor = VWO.visitor || function() { VWO.push(['visitor'].concat([].slice.call(arguments))); };
-    VWO.visitor({ emotionsAiSegment: emotionsAiSegment });
-    console.warn('[EmotionsAI] pushed segment:', emotionsAiSegment);
-  }
-  if (window._vwo_code) {
-    pushEmotionsAI();
-  } else {
-    window.addEventListener('load', pushEmotionsAI, { once: true });
-  }
+  (function pushEmotionsAIWhenReady(attempts) {
+    if (window.VWO && typeof window.VWO.visitor === 'function') {
+      VWO.visitor({ emotionsAiSegment: emotionsAiSegment });
+      console.warn('[EmotionsAI] pushed segment:', emotionsAiSegment);
+    } else if (attempts > 0) {
+      setTimeout(function() { pushEmotionsAIWhenReady(attempts - 1); }, 200);
+    }
+  })(25); // poll up to 5 seconds
 
   // Resolve pricePromotion first — if state changed, re-render with correct prices/banner
   const promoChanged = await fetchPricePromoFlag();
