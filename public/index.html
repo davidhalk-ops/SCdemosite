@@ -1715,10 +1715,13 @@ function _loginKeydown(e) {
 }
 
 function submitLogin() {
-  const username = (document.getElementById('login-username')?.value || '').trim();
-  if (!username) { document.getElementById('login-username')?.focus(); return; }
+  const input = document.getElementById('login-username');
+  const username = (input?.value || '').trim();
+  console.log('[Login] input element:', input, '| value:', username);
+  if (!username) { input?.focus(); return; }
   activeUserId = username;
   localStorage.setItem(VWO_ID_KEY, username);
+  console.log('[Login] localStorage set:', VWO_ID_KEY, '=', localStorage.getItem(VWO_ID_KEY));
   closeLoginModal();
   render();
   loadFlaggedRecos();
