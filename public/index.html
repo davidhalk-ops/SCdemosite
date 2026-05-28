@@ -1660,11 +1660,10 @@ async function loadFlaggedRecos() {
   if (!siteConfig.hasCredentials) return;
   await initVwoClientSide(siteConfig.accountId, siteConfig.sdkKey);
 
-  if (vwoClientSide) {
-    const attributes = { emotionsAiSegment: emotionsAiSegment };
-    const userContext = getVwoContext();
-    vwoClientSide.setAttribute(attributes, userContext);
-  }
+  window.VWO = window.VWO || [];
+  VWO.visitor = VWO.visitor || function() { VWO.push(['visitor'].concat([].slice.call(arguments))); };
+  VWO.visitor({ emotionsAiSegment: emotionsAiSegment });
+  console.log('[EmotionsAI] pushed segment:', emotionsAiSegment);
 
   // Resolve pricePromotion first — if state changed, re-render with correct prices/banner
   const promoChanged = await fetchPricePromoFlag();
