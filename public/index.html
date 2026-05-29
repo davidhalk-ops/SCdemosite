@@ -1681,6 +1681,7 @@ function navigate(page, data = {}) {
   state.page = page;
   if (data.product) { state.currentProduct = data.product; state.selectedSize = null; state.selectedColor = data.product.colors[0]; state.qty = 1; }
   if (data.collection) state.currentCollection = data.collection;
+  if (page === 'checkout' && vwoClientSide) vwoClientSide.trackEvent('view_cart', getVwoContext());
   window.scrollTo(0, 0);
   render();
 }
@@ -2266,7 +2267,16 @@ function bindEvents() {
       const existing = state.cart.find(i => i.product.id === p.id && i.size === state.selectedSize);
       if (existing) existing.qty += state.qty;
       else state.cart.push({ product: p, size: state.selectedSize, color: state.selectedColor, qty: state.qty });
+      if (vwoClientSide) vwoClientSide.trackEvent('add_to_cart', getVwoContext());
       navigate('checkout');
+    };
+  }
+
+  // Add to wishlist
+  const wishlistBtn = document.querySelector('.pdp-wishlist');
+  if (wishlistBtn) {
+    wishlistBtn.onclick = () => {
+      if (vwoClientSide) vwoClientSide.trackEvent('add_to_wishlist', getVwoContext());
     };
   }
 
