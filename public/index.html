@@ -2829,12 +2829,13 @@ boot();
   var attempts = 0;
   console.log('[WDL] polling for wdlDataLayer...');
   var timer = setInterval(function() {
-    var acc = window.wdlDataLayer &&
-              window.wdlDataLayer.affinity &&
-              window.wdlDataLayer.affinity.accumulatedAffinities;
+    if (attempts === 0) console.log('[WDL] window.WDL =', window.WDL);
+    var acc = window.WDL &&
+              window.WDL.affinity &&
+              window.WDL.affinity.accumulatedAffinities;
     if (!acc && ++attempts < 100) return;
     clearInterval(timer);
-    if (!acc) { console.warn('[WDL] wdlDataLayer not found after', attempts * 200, 'ms'); return; }
+    if (!acc) { console.warn('[WDL] wdlDataLayer not found after', attempts * 200, 'ms — window.WDL:', window.WDL); return; }
 
     var topBrand    = topKey(acc.accumulatedAffinityToBrands     || {});
     var topCategory = topKey(acc.accumulatedAffinityToCategories || {});
