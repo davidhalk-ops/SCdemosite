@@ -1715,6 +1715,7 @@ function navigate(page, data = {}) {
   else if (page === 'success') url = '/order-success';
   else if (page === 'search') url = `/search${_searchQuery ? '?q=' + encodeURIComponent(_searchQuery) : ''}`;
   history.pushState({ page }, '', url);
+  if (typeof window.ABTastyReload === 'function') window.ABTastyReload();
   window.scrollTo(0, 0);
   render();
 }
