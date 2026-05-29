@@ -2846,8 +2846,10 @@ function _wdlPushAffinities() {
 
     window.VWO = window.VWO || [];
     VWO.event = VWO.event || function() { VWO.push(['event'].concat([].slice.call(arguments))); };
-    VWO.event('acxTopAffinities', { topBrand, topCategory, topColor });
-    console.log('[WDL] VWO.event("acxTopAffinities") fired');
+    var payload = { topBrand: topBrand, topCategory: topCategory, topColor: topColor };
+    console.log('[WDL] calling VWO.event("acxTopAffinities",', JSON.stringify(payload), ')');
+    VWO.event('acxTopAffinities', payload);
+    console.log('[WDL] VWO.event("acxTopAffinities") fired — VWO queue:', window.VWO);
   }, 200);
 }
 
