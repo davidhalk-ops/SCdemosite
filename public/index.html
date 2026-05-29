@@ -2815,6 +2815,38 @@ async function boot() {
 }
 
 boot();
+
+// Poll for WDL DataLayer and push top brand/category/color affinities to VWO
+(function() {
+  function topKey(obj) {
+    var best = null, max = -Infinity;
+    Object.keys(obj).forEach(function(k) {
+      if (obj[k] > max) { max = obj[k]; best = k; }
+    });
+    return best ? best.replace('accumulatedAffinityTo', '') : '';
+  }
+
+  var attempts = 0;
+  console.log('[WDL] polling for wdlDataLayer...');
+  var timer = setInterval(function() {
+    var acc = window.wdlDataLayer &&
+              window.wdlDataLayer.affinity &&
+              window.wdlDataLayer.affinity.accumulatedAffinities;
+    if (!acc && ++attempts < 100) return;
+    clearInterval(timer);
+    if (!acc) { console.warn('[WDL] wdlDataLayer not found after', attempts * 200, 'ms'); return; }
+
+    var topBrand    = topKey(acc.accumulatedAffinityToBrands     || {});
+    var topCategory = topKey(acc.accumulatedAffinityToCategories || {});
+    var topColor    = topKey(acc.accumulatedAffinityToColors     || {});
+    console.log('[WDL] found after', attempts * 200, 'ms —', { topBrand, topCategory, topColor });
+
+    window.VWO = window.VWO || [];
+    VWO.event = VWO.event || function() { VWO.push(['event'].concat([].slice.call(arguments))); };
+    VWO.event('acxTopAffinities', { topBrand, topCategory, topColor });
+    console.log('[WDL] VWO.event("acxTopAffinities") fired');
+  }, 200);
+})();
 </script>
 </body>
 </html>
