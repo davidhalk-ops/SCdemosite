@@ -1002,6 +1002,15 @@ function applyTheme(theme) {
 let siteConfig = {};
 
 // ====== MOCK LOGIN ======
+// 2. SENDING USER CONTEXT
+// Every SDK call receives a user context object so VWO knows which visitor to
+// evaluate rules for. `id` is the stable identifier used for bucketing — it must
+// be the same value on every call for consistent variation assignment.
+//
+// The ID comes from localStorage (tn_vwo_user_id), seeded with the server-assigned
+// UUID on first visit. When a user "logs in" via the mock Login modal, activeUserId
+// overrides the stored ID and `loggedin: true` is appended as a custom variable
+// so VWO targeting rules can distinguish authenticated visitors.
 let activeUserId = null;
 const VWO_ID_KEY = 'tn_vwo_user_id';
 function getVwoUserId() { return localStorage.getItem(VWO_ID_KEY) || siteConfig.visitorId || 'anonymous'; }
@@ -1075,6 +1084,14 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
   if (!section || !vwoClientSide) return;
 
   try {
+    // 3. RECEIVING AND ACTIVATING FLAGS
+    // getFlag() evaluates the 'recommendations' flag for this visitor using the
+    // user context. The SDK applies targeting and traffic-allocation rules locally
+    // (against the downloaded settings) and returns a flag object.
+    //
+    // isEnabled()        → true when the visitor is bucketed into an active variation
+    // getVariable(k, d)  → reads a typed variable from that variation (e.g. a reco
+    //                       model ID string), returning default `d` if the flag is off
     const flag = await vwoClientSide.getFlag('recommendations', getVwoContext());
     const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
@@ -1153,6 +1170,14 @@ const EMOTIONS_AI_SEGMENTS = ['Safety','Competition','Understanding','Attention'
 const emotionsAiSegment = EMOTIONS_AI_SEGMENTS[Math.floor(Math.random() * EMOTIONS_AI_SEGMENTS.length)];
 
 // ====== VWO CLIENT-SIDE SDK ======
+//
+// 1. INITIALIZING THE SDK
+// The browser SDK bundle (vwo-fme-javascript-sdk.min.js) is served from /vwo-sdk.js
+// and loaded lazily the first time initVwoClientSide() is called. vwoSdk.init()
+// contacts VWO servers with the visitor's own accountId + sdkKey, downloads that
+// account's flag settings, and resolves to a ready client stored in `vwoClientSide`.
+// Re-calling init when `window.vwoSdk` already exists is a no-op — the guard at the
+// top of doInit() skips the script tag injection.
 let vwoClientSide = null;
 
 async function initVwoClientSide(accountId, sdkKey) {
@@ -1681,6 +1706,7 @@ function navigate(page, data = {}) {
   state.page = page;
   if (data.product) { state.currentProduct = data.product; state.selectedSize = null; state.selectedColor = data.product.colors[0]; state.qty = 1; }
   if (data.collection) state.currentCollection = data.collection;
+  // 4. SENDING HITS — fires a view_cart conversion whenever the cart page is loaded
   if (page === 'checkout' && vwoClientSide) vwoClientSide.trackEvent('view_cart', getVwoContext());
   window.scrollTo(0, 0);
   render();
@@ -2267,6 +2293,12 @@ function bindEvents() {
       const existing = state.cart.find(i => i.product.id === p.id && i.size === state.selectedSize);
       if (existing) existing.qty += state.qty;
       else state.cart.push({ product: p, size: state.selectedSize, color: state.selectedColor, qty: state.qty });
+      // 4. SENDING HITS
+      // trackEvent() records a metric conversion against the active variation for
+      // this visitor. VWO uses these hits to calculate conversion rates and
+      // determine statistical significance in experiment reports.
+      // The same user context passed to getFlag() must be used here so VWO can
+      // attribute the conversion to the correct bucket.
       if (vwoClientSide) vwoClientSide.trackEvent('add_to_cart', getVwoContext());
       navigate('checkout');
     };

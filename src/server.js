@@ -121,9 +121,16 @@ try {
 } catch(e) { /* first run */ }
 
 // ─────────────────────────────────────────────
-// VWO Feature Experimentation client
-// Initialised at module load so Vercel serverless cold starts
-// have the client ready before the first request is handled.
+// 1. INITIALIZING THE SDK
+//
+// vwoInit() contacts VWO servers, downloads the account's flag/campaign settings,
+// and returns a ready-to-use client. `pollInterval` keeps those settings fresh
+// in long-running processes without a cold-start penalty on every request.
+//
+// The client is initialised once at module load (not per-request) so that
+// Vercel serverless cold starts don't block the first incoming request.
+// `vwoReady` is a Promise that resolves when init is complete; every route
+// that needs the client awaits it before proceeding.
 // ─────────────────────────────────────────────
 let vwoClient = null;
 
@@ -132,7 +139,7 @@ async function initVwoClient(sdkKey, accountId) {
     vwoClient = await vwoInit({
       accountId:    String(accountId),
       sdkKey:       String(sdkKey),
-      pollInterval: 60000,
+      pollInterval: 60000, // re-fetch flag settings every 60 s
       logger:       { level: 'ERROR' },
     });
     console.log('✅  VWO FME client ready (accountId:', accountId, ')');
@@ -583,7 +590,24 @@ async function resolveExperiments(visitorId) {
   await vwoReady;
   if (vwoClient) {
     try {
+      // 2. SENDING USER CONTEXT
+      // The user context tells VWO which visitor to bucket. `id` is the stable
+      // identifier used for consistent assignment — the same ID always lands in
+      // the same variation. `customVariables` can carry targeting attributes
+      // (e.g. loggedin, usertheme) that VWO rules evaluate server-side.
       const ctx = { id: visitorId };
+
+      // 3. RECEIVING AND ACTIVATING FLAGS
+      // getFlag() evaluates the named flag for this visitor and returns a flag
+      // object. The SDK checks the downloaded settings, applies any targeting/
+      // traffic rules, and determines whether the flag is on or off for this ID.
+      //
+      // isEnabled()        → true if the visitor is in an active variation
+      // getVariable(k, d)  → reads a typed variable from the winning variation,
+      //                       falling back to `d` if the flag is off or the
+      //                       variable is missing
+      //
+      // All three flags are fetched in parallel to avoid serial round-trips.
       const [heroFlag, promoFlag, wishlistFlag] = await Promise.all([
         vwoClient.getFlag('hero_variant',    ctx),
         vwoClient.getFlag('promo_layout',    ctx),
