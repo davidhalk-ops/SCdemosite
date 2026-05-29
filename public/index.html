@@ -51,6 +51,8 @@ window._vwo_code || (function() {
     --radius-lg: 10px;
   }
 
+  #page-load-bar { display: none; position: fixed; top: 0; left: 0; height: 3px; width: 0; background: linear-gradient(90deg, #C8102E, #C5A028); z-index: 10000; transition: width 0.6s cubic-bezier(0.1,0.6,0.4,1), opacity 0.3s ease; pointer-events: none; }
+
   body { font-family: var(--font-body); background: var(--white); color: var(--black); line-height: 1.6; }
   a { text-decoration: none; color: inherit; }
   button { cursor: pointer; font-family: var(--font-body); border: none; }
@@ -802,6 +804,22 @@ window._vwo_code || (function() {
 <script type="text/javascript" src="https://try.abtasty.com/b0ffe524c1c6b488e62b86541f9fd7ec.js"></script>
 </head>
 <body>
+<div id="page-load-bar"></div>
+<script>
+  (function() {
+    if (!('ontouchstart' in window) && navigator.maxTouchPoints === 0) return;
+    var bar = document.getElementById('page-load-bar');
+    bar.style.display = 'block';
+    requestAnimationFrame(function() { bar.style.width = '20%'; });
+    setTimeout(function() { bar.style.width = '55%'; }, 300);
+    setTimeout(function() { bar.style.width = '75%'; }, 900);
+    window._completeLoadBar = function() {
+      bar.style.transition = 'width 0.2s ease, opacity 0.35s ease 0.2s';
+      bar.style.width = '100%';
+      setTimeout(function() { bar.style.opacity = '0'; }, 200);
+    };
+  })();
+</script>
 <div class="login-modal-overlay hidden" id="login-modal-overlay">
   <div class="login-modal">
     <button class="login-modal-close" onclick="closeLoginModal()">✕</button>
@@ -2810,6 +2828,7 @@ async function boot() {
   applyTheme(siteConfig.theme || 'canada');
   loadRecosTag(siteConfig.recoId || '1120');
   render();
+  if (window._completeLoadBar) window._completeLoadBar();
 
   // Push EmotionsAI segment to VWO — shim queues the call if VWO tag isn't loaded yet
   window.VWO = window.VWO || [];
