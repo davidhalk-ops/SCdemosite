@@ -1715,6 +1715,7 @@ function navigate(page, data = {}) {
   else if (page === 'success') url = '/order-success';
   else if (page === 'search') url = `/search${_searchQuery ? '?q=' + encodeURIComponent(_searchQuery) : ''}`;
   history.pushState({ page }, '', url);
+  _wdlPushAffinities();
   window.scrollTo(0, 0);
   render();
 }
@@ -2816,8 +2817,9 @@ async function boot() {
 
 boot();
 
-// Poll for WDL DataLayer and push top brand/category/color affinities to VWO
-(function() {
+// Poll for WDL DataLayer and push top brand/category/color affinities to VWO.
+// Called on page load and after every navigate() URL change.
+function _wdlPushAffinities() {
   function topKey(obj) {
     var best = null, max = -Infinity;
     Object.keys(obj).forEach(function(k) {
@@ -2827,7 +2829,7 @@ boot();
   }
 
   var attempts = 0;
-  console.log('[WDL] polling for wdlDataLayer...');
+  console.log('[WDL] polling for WDL —', window.location.pathname);
   var timer = setInterval(function() {
     if (attempts === 0) console.log('[WDL] window.WDL =', window.WDL);
     var acc = window.WDL &&
@@ -2835,7 +2837,7 @@ boot();
               window.WDL.affinity.accumulatedAffinities;
     if (!acc && ++attempts < 100) return;
     clearInterval(timer);
-    if (!acc) { console.warn('[WDL] wdlDataLayer not found after', attempts * 200, 'ms — window.WDL:', window.WDL); return; }
+    if (!acc) { console.warn('[WDL] not found after', attempts * 200, 'ms — window.WDL:', window.WDL); return; }
 
     var topBrand    = topKey(acc.accumulatedAffinityToBrands     || {});
     var topCategory = topKey(acc.accumulatedAffinityToCategories || {});
@@ -2847,7 +2849,9 @@ boot();
     VWO.event('acxTopAffinities', { topBrand, topCategory, topColor });
     console.log('[WDL] VWO.event("acxTopAffinities") fired');
   }, 200);
-})();
+}
+
+_wdlPushAffinities();
 </script>
 </body>
 </html>
