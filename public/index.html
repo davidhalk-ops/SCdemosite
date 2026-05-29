@@ -772,9 +772,14 @@ window._vwo_code || (function() {
 
   @media (max-width: 600px) {
     .nav-links { display: none; }
-    .nav-search-wrap { display: none; }
     .nav-icon:not(.cart-badge) { display: none; }
-    .nav-inner { gap: 8px; padding: 0 16px; }
+    nav { height: auto; }
+    .nav-inner { flex-wrap: wrap; height: auto; gap: 0; padding: 0 16px; }
+    .nav-logo, .nav-right { height: 68px; }
+    .nav-search-wrap { order: 10; flex: 0 0 100%; width: 100%; border-radius: 12px; margin-bottom: 10px; }
+    .nav-search-wrap:focus-within { width: 100%; }
+    .search-drop-columns { grid-template-columns: 1fr; }
+    .search-drop-col-left { border-right: none; border-bottom: 1px solid var(--gray-light); }
     .login-modal-overlay { padding: 16px; }
     .login-modal { padding: 24px 20px; }
     .hero-content { padding: 40px 24px; }
@@ -1813,11 +1818,6 @@ function buildNav() {
         <a href="#" onclick="alert('Wingify Commerce powers our story personalization!');return false">${T.navStory}</a>
       </div>
       <div class="nav-right">
-        <div class="nav-search-wrap">
-          <span style="color:var(--gray);font-size:14px;flex-shrink:0">🔍</span>
-          <input id="nav-search-input" type="text" placeholder="${T.navSearch}"
-            value="${_escHtml(state.page === 'search' ? _searchQuery : '')}" autocomplete="off">
-        </div>
         ${activeUserId
           ? `<div class="nav-user-pill">👤 ${_escHtml(activeUserId)} <button class="logout-btn" onclick="logoutUser()" title="Sign out">✕</button></div>`
           : `<button class="nav-login-btn" onclick="openLoginModal()">Login</button>`
@@ -1827,6 +1827,11 @@ function buildNav() {
           🛒
           ${cartCount > 0 ? `<span class="badge">${cartCount}</span>` : ''}
         </button>
+      </div>
+      <div class="nav-search-wrap">
+        <span style="color:var(--gray);font-size:14px;flex-shrink:0">🔍</span>
+        <input id="nav-search-input" type="text" placeholder="${T.navSearch}"
+          value="${_escHtml(state.page === 'search' ? _searchQuery : '')}" autocomplete="off">
       </div>
     </div>
   </nav>`;
@@ -2406,9 +2411,18 @@ function _positionDropdown() {
   const dd   = document.getElementById('nav-search-dropdown');
   if (!wrap || !dd) return;
   const r = wrap.getBoundingClientRect();
-  dd.style.top   = `${r.bottom + 6}px`;
-  dd.style.right = `${window.innerWidth - r.right}px`;
-  dd.style.width = `${Math.max(r.width, 560)}px`;
+  dd.style.top = `${r.bottom + 4}px`;
+  if (window.innerWidth <= 600) {
+    dd.style.left         = '0';
+    dd.style.right        = '0';
+    dd.style.width        = '';
+    dd.style.borderRadius = '0';
+  } else {
+    dd.style.left         = '';
+    dd.style.right        = `${window.innerWidth - r.right}px`;
+    dd.style.width        = `${Math.max(r.width, 560)}px`;
+    dd.style.borderRadius = '';
+  }
 }
 
 function _hideNavDropdown() {
