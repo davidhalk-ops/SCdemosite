@@ -1708,6 +1708,13 @@ function navigate(page, data = {}) {
   if (data.collection) state.currentCollection = data.collection;
   // 4. SENDING HITS — fires a view_cart conversion whenever the cart page is loaded
   if (page === 'checkout' && vwoClientSide) vwoClientSide.trackEvent('view_cart', getVwoContext());
+  let url = '/';
+  if (page === 'pdp' && state.currentProduct) url = `/product/${state.currentProduct.id}`;
+  else if (page === 'collection' && state.currentCollection) url = `/collection/${state.currentCollection.id}`;
+  else if (page === 'checkout') url = '/cart';
+  else if (page === 'success') url = '/order-success';
+  else if (page === 'search') url = `/search${_searchQuery ? '?q=' + encodeURIComponent(_searchQuery) : ''}`;
+  history.pushState({ page }, '', url);
   window.scrollTo(0, 0);
   render();
 }
