@@ -1042,11 +1042,19 @@ let siteConfig = {};
 // overrides the stored ID and `loggedin: true` is appended as a custom variable
 // so VWO targeting rules can distinguish authenticated visitors.
 let activeUserId = null;
+let acxTopAudience = '';
 const VWO_ID_KEY = 'tn_vwo_user_id';
 function getVwoUserId() { return localStorage.getItem(VWO_ID_KEY) || siteConfig.visitorId || 'anonymous'; }
 function getVwoContext() {
   const ctx = { id: getVwoUserId() };
-  if (activeUserId) ctx.customVariables = { loggedin: true };
+  ctx.customVariables = {
+    Device: 'Desktop',
+    PredictionToPurchase: 'High',
+    PredictionToAbandonCart: 'Low',
+    EmotionsAI: emotionsAiSegment,
+    ...(acxTopAudience ? { ACXTopAudience: acxTopAudience } : {}),
+    ...(activeUserId ? { loggedin: true } : {}),
+  };
   return ctx;
 }
 
@@ -2882,6 +2890,7 @@ function _wdlPushAffinities() {
     var topBrand    = topKey(acc.accumulatedAffinityToBrands     || {});
     var topCategory = topKey(acc.accumulatedAffinityToCategories || {});
     var topColor    = topKey(acc.accumulatedAffinityToColors     || {});
+    acxTopAudience  = topCategory || topBrand || '';
     console.log('[WDL] found after', attempts * 200, 'ms —', { topBrand, topCategory, topColor });
 
     window.VWO = window.VWO || [];
