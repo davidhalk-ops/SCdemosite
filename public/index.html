@@ -2834,13 +2834,15 @@ function _bindNavSearch() {
 // ====== BOOT ======
 async function boot() {
   try {
-    // Always load shared demo credentials; fall back to visitor cookie lookup
-    siteConfig = await fetch('/api/config?email=david.halk%40abtasty.com').then(r => r.json());
-    if (!siteConfig.hasCredentials) {
-      siteConfig = await fetch('/api/config').then(r => r.json());
-    }
+    siteConfig = await fetch('/api/config').then(r => r.json());
   } catch(e) {
     siteConfig = { hasCredentials: false };
+  }
+
+  if (!siteConfig.hasCredentials) {
+    if (window._completeLoadBar) window._completeLoadBar();
+    showGate();
+    return;
   }
 
   if (siteConfig.recoId) {
