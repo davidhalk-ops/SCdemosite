@@ -1223,7 +1223,18 @@ async function initVwoClientSide(accountId, sdkKey) {
     const doInit = () => {
       console.log('[VWO] initVwoClientSide — accountId:', accountId, '| sdkKey:', sdkKey);
       window.vwoSdk.init({ accountId: String(accountId), sdkKey: String(sdkKey), logger: { level: 'ERROR' } })
-        .then(client => { console.log('[VWO] client-side SDK ready — accountId:', accountId); vwoClientSide = client; resolve(client); })
+        .then(async client => {
+          try {
+            await client.getFlag('__probe__', { id: '__probe__' });
+          } catch(e) {
+            if (String(e).includes('Invalid Settings')) {
+              console.warn('[VWO] client-side SDK: settings invalid for accountId:', accountId, '— flag evaluation disabled');
+              resolve(null); return;
+            }
+          }
+          console.log('[VWO] client-side SDK ready — accountId:', accountId);
+          vwoClientSide = client; resolve(client);
+        })
         .catch(e => { console.error('[VWO] client-side SDK init failed — accountId:', accountId, '| sdkKey:', sdkKey, '| error:', e); resolve(null); });
     };
     if (window.vwoSdk) { doInit(); return; }
