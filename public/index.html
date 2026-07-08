@@ -1130,6 +1130,7 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
     // isEnabled()        → true when the visitor is bucketed into an active variation
     // getVariable(k, d)  → reads a typed variable from that variation (e.g. a reco
     //                       model ID string), returning default `d` if the flag is off
+    console.log('[VWO] getFlag — recommendations | context:', getVwoContext());
     const flag = await vwoClientSide.getFlag('recommendations', getVwoContext());
     const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
@@ -1710,6 +1711,7 @@ function render() {
 async function fetchPricePromoFlag() {
   if (!vwoClientSide) return false;
   try {
+    console.log('[VWO] getFlag — pricePromotion | context:', getVwoContext());
     const flag    = await vwoClientSide.getFlag('pricePromotion', getVwoContext());
     const enabled = flag.isEnabled();
     const raw     = enabled ? flag.getVariable('PromoBanner', false) : false;
