@@ -1221,9 +1221,10 @@ let vwoClientSide = null;
 async function initVwoClientSide(accountId, sdkKey) {
   return new Promise(resolve => {
     const doInit = () => {
+      console.log('[VWO] initVwoClientSide — accountId:', accountId, '| sdkKey:', sdkKey);
       window.vwoSdk.init({ accountId: String(accountId), sdkKey: String(sdkKey), logger: { level: 'ERROR' } })
-        .then(client => { vwoClientSide = client; resolve(client); })
-        .catch(() => resolve(null));
+        .then(client => { console.log('[VWO] client-side SDK ready — accountId:', accountId); vwoClientSide = client; resolve(client); })
+        .catch(e => { console.error('[VWO] client-side SDK init failed — accountId:', accountId, '| sdkKey:', sdkKey, '| error:', e); resolve(null); });
     };
     if (window.vwoSdk) { doInit(); return; }
     const s = document.createElement('script');
