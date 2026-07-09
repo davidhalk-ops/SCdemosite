@@ -1231,7 +1231,7 @@ async function initVwoClientSide(accountId, sdkKey) {
         console.error('[VWO] initVwoClientSide: null/missing credentials — accountId:', aid, '| sdkKey:', key, '— skipping init. Likely a decryption failure (ENCRYPTION_KEY mismatch).');
         resolve(null); return;
       }
-      window.vwoSdk.init({ accountId: aid, sdkKey: key, logger: { level: 'ERROR' } })
+      window.vwoSdk.init({ accountId: aid, sdkKey: key, logger: { level: 'DEBUG', transport: { log: (level, msg) => { if (level === 'ERROR' || (level === 'INFO' && String(msg).includes('Settings'))) console.log('[VWO SDK]', level, msg); } } } })
         .then(client => {
           console.log('[VWO] client-side SDK ready — accountId:', accountId);
           vwoClientSide = client; resolve(client);
