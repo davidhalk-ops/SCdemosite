@@ -887,7 +887,7 @@ const COLLECTIONS = [
 const THEME_CONTENT = {
   canada: {
     lang: 'en', storeName: 'True North', storeIcon: '🍁', decorEmoji: '🍁', flagEmoji: '🇨🇦',
-    announcementHTML: '🍁 <strong>Free shipping on orders over $100 CAD</strong> · Use code <strong>TRUENORTH</strong> for 15% off your first order',
+    announcementHTML: d => `🍁 <strong>Free shipping on orders over $100 CAD</strong> · Use code <strong>TRUENORTH</strong> for ${d || 15}% off your first order`,
     navHome: 'Home', navShop: 'Shop', navSale: 'Sale 🍁', navStory: 'Our Story', navSearch: 'Search…',
     heroBadge: '🍁 Made for Canadian Winters',
     heroH1: 'Gear Built for the <em>True North</em>',
@@ -945,7 +945,7 @@ const THEME_CONTENT = {
   },
   france: {
     lang: 'fr', storeName: 'Atelier Lumière', storeIcon: '⚜️', decorEmoji: '⚜️', flagEmoji: '🇫🇷',
-    announcementHTML: '⚜️ <strong>Livraison gratuite à partir de 100 €</strong> · Code <strong>LUMIERE</strong> pour -15% sur votre première commande',
+    announcementHTML: d => `⚜️ <strong>Livraison gratuite à partir de 100 €</strong> · Code <strong>LUMIERE</strong> pour -${d || 15}% sur votre première commande`,
     navHome: 'Accueil', navShop: 'Boutique', navSale: 'Soldes ⚜️', navStory: 'Notre Histoire', navSearch: 'Rechercher…',
     heroBadge: '⚜️ Inspiré des Hivers Parisiens',
     heroH1: 'La Mode au Cœur de <em>Paris</em>',
@@ -1119,6 +1119,7 @@ function getCarouselTitle(key) {
 // If the flag is disabled or the variable is still "none", the static section stays visible.
 async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, staticId) {
   const section = document.getElementById(sectionId);
+  console.log('[VWO] fetchFlaggedReco — variableKey:', variableKey, '| vwoClientSide:', vwoClientSide ? 'ready' : 'null/undefined', '| section found:', !!section);
   if (!section || !vwoClientSide) return;
 
   try {
@@ -1134,6 +1135,7 @@ async function fetchFlaggedReco(variableKey, sectionId, gridId, excludeId, stati
     const flag = await vwoClientSide.getFlag('recommendations', getVwoContext());
     const isEnabled   = flag.isEnabled();
     const recoModelId = isEnabled ? flag.getVariable(variableKey, 'none') : 'none';
+    console.log('[VWO] getFlag — recommendations result | isEnabled:', isEnabled, '| variableKey:', variableKey, '| value:', recoModelId);
     if (recoModelId === 'none') return; // leave static section visible
 
     // Valid reco ID — swap static section for the flagged carousel
@@ -1709,6 +1711,7 @@ function render() {
 // Resolves the pricePromotion flag from the visitor's FME account.
 // Returns true if state changed (caller should re-render).
 async function fetchPricePromoFlag() {
+  console.log('[VWO] fetchPricePromoFlag — vwoClientSide:', vwoClientSide ? 'ready' : 'null/undefined');
   if (!vwoClientSide) return false;
   try {
     console.log('[VWO] getFlag — pricePromotion | context:', getVwoContext());
@@ -1717,6 +1720,7 @@ async function fetchPricePromoFlag() {
     const raw     = enabled ? flag.getVariable('PromoBanner', false) : false;
     const banner  = raw === true || raw === 'true';
     const disc    = enabled ? (Number(flag.getVariable('discountpercent', 0)) || 0) : 0;
+    console.log('[VWO] getFlag — pricePromotion result | isEnabled:', enabled, '| PromoBanner:', banner, '| discountpercent:', disc);
     const changed = banner !== _promoBannerEnabled || disc !== _promoDiscount;
     _promoBannerEnabled = banner;
     _promoDiscount      = disc;
@@ -1739,6 +1743,7 @@ function buildPromoBar() {
 async function loadFlaggedRecos() {
   if (!siteConfig.hasCredentials) return;
   await initVwoClientSide(siteConfig.accountId, siteConfig.sdkKey);
+  console.log('[VWO] loadFlaggedRecos — vwoClientSide after init:', vwoClientSide ? 'ready' : 'null/undefined');
 
   // Resolve pricePromotion first — if state changed, re-render with correct prices/banner
   const promoChanged = await fetchPricePromoFlag();
@@ -1828,7 +1833,7 @@ function buildNav() {
   const T = THEME_CONTENT[currentTheme];
   const cartCount = state.cart.reduce((sum, i) => sum + i.qty, 0);
   return `
-  <div class="announcement">${T.announcementHTML}</div>
+  <div class="announcement">${T.announcementHTML(_promoDiscount)}</div>
   <nav>
     <div class="nav-inner">
       <div class="nav-logo" onclick="navigate('home')" style="cursor:pointer">
