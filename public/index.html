@@ -1224,13 +1224,19 @@ let vwoClientSide = null;
 async function initVwoClientSide(accountId, sdkKey) {
   return new Promise(resolve => {
     const doInit = () => {
-      console.log('[VWO] initVwoClientSide — accountId:', accountId, '| sdkKey:', sdkKey);
-      window.vwoSdk.init({ accountId: String(accountId), sdkKey: String(sdkKey), logger: { level: 'ERROR' } })
+      const aid = String(accountId);
+      const key = String(sdkKey);
+      console.log('[VWO] initVwoClientSide — accountId:', aid, '| sdkKey:', key);
+      if (!accountId || !sdkKey || aid === 'null' || aid === 'undefined' || key === 'null' || key === 'undefined') {
+        console.error('[VWO] initVwoClientSide: null/missing credentials — accountId:', aid, '| sdkKey:', key, '— skipping init. Likely a decryption failure (ENCRYPTION_KEY mismatch).');
+        resolve(null); return;
+      }
+      window.vwoSdk.init({ accountId: aid, sdkKey: key, logger: { level: 'ERROR' } })
         .then(client => {
           console.log('[VWO] client-side SDK ready — accountId:', accountId);
           vwoClientSide = client; resolve(client);
         })
-        .catch(e => { console.error('[VWO] client-side SDK init failed — accountId:', accountId, '| sdkKey:', sdkKey, '| error:', e); resolve(null); });
+        .catch(e => { console.error('[VWO] client-side SDK init failed — accountId:', aid, '| sdkKey:', key, '| error:', e); resolve(null); });
     };
     if (window.vwoSdk) { doInit(); return; }
     const s = document.createElement('script');
