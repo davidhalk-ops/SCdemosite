@@ -1236,9 +1236,10 @@ async function initVwoClientSide(accountId, sdkKey) {
       window.vwoSdk.init({ accountId: aid, sdkKey: key, logger: { level: 'DEBUG', transport: { log: (level, msg) => { if (level === 'ERROR' || (level === 'INFO' && String(msg).includes('Settings'))) console.log('[VWO SDK]', level, msg); } } } })
         .then(client => {
           const hasGetFlag = client && typeof client.getFlag === 'function';
-          console.log('[VWO] client-side SDK init resolved — accountId:', accountId, '| hasGetFlag:', hasGetFlag, '| client keys:', client ? Object.keys(client) : 'null');
-          if (!hasGetFlag) {
-            console.error('[VWO] SDK init returned invalid client (no getFlag). Settings schema validation likely failed — check that flags in this VWO account have at least one active Running rollout rule.');
+          const settingsValid = client && client.isSettingsValid !== false;
+          console.log('[VWO] client-side SDK init resolved — accountId:', accountId, '| hasGetFlag:', hasGetFlag, '| isSettingsValid:', client?.isSettingsValid);
+          if (!hasGetFlag || !settingsValid) {
+            console.error('[VWO] SDK init returned invalid client — isSettingsValid:', client?.isSettingsValid, '. Check that flags in this VWO account have at least one active Running rollout rule attached.');
             vwoClientSide = null; resolve(null); return;
           }
           vwoClientSide = client; resolve(client);
