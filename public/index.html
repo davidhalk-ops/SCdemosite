@@ -1062,6 +1062,9 @@ function getVwoContext() {
 let _promoBannerEnabled = false;
 let _promoDiscount      = 0; // percentage, e.g. 15 = 15%
 
+// ====== PDP LAYOUT STATE (resolved from pdpLayout flag) ======
+let _pdpLayoutDesignId = null;
+
 function _discountedPrice(price) {
   if (!_promoDiscount) return price;
   return Math.round(price * (1 - _promoDiscount / 100));
@@ -1745,6 +1748,20 @@ function buildPromoBar() {
   return `<div class="promo-flash-bar">${msg}</div>`;
 }
 
+async function fetchPdpLayoutFlag() {
+  if (!vwoClientSide || typeof vwoClientSide.getFlag !== 'function') return;
+  try {
+    console.log('[VWO] getFlag — pdpLayout | context:', getVwoContext());
+    const flag = await vwoClientSide.getFlag('pdpLayout', getVwoContext());
+    const enabled = flag.isEnabled();
+    const designId = enabled ? flag.getVariable('designID', null) : null;
+    console.log('[VWO] getFlag — pdpLayout result | isEnabled:', enabled, '| designID:', designId);
+    _pdpLayoutDesignId = designId;
+  } catch(e) {
+    console.warn('[VWO] getFlag (pdpLayout) failed:', String(e));
+  }
+}
+
 // Re-initialises the VWO client on every render so flag variables are always fresh.
 async function loadFlaggedRecos() {
   if (!siteConfig.hasCredentials) return;
@@ -1754,6 +1771,8 @@ async function loadFlaggedRecos() {
   // Resolve pricePromotion first — if state changed, re-render with correct prices/banner
   const promoChanged = await fetchPricePromoFlag();
   if (promoChanged) { render(); return; } // render() will call loadFlaggedRecos again; second pass promoChanged=false
+
+  await fetchPdpLayoutFlag();
 
   if (state.page === 'home') {
     fetchFlaggedReco('homepage_id', 'flag-reco-home', 'flag-grid-home', undefined, 'trending-section');
