@@ -1385,7 +1385,7 @@ function buildGateHTML() {
       inputId: 'gate-reco-token', type: 'password', placeholder: '••••••••••••••••',
       value: gateState.recoToken },
     { key: 'abt-id', num: 6,
-      title: 'Wingify Commerce Identifier',
+      title: 'Wingify Search API',
       hint: 'Your Wingify identifier — the same one used for your Web Experimentation implementation. This powers the Search and product discovery features in the demo.',
       inputId: 'gate-abt-id', type: 'text', placeholder: 'e.g. b0ffe524c1c6b488e62b86541f9fd7ec',
       value: gateState.abtId },
@@ -1605,7 +1605,7 @@ function openCredentials() {
       <input id="cred-reco-token" type="password" value="${siteConfig.recoToken || ''}" autocomplete="off">
     </div>
     <div class="creds-field">
-      <label>Wingify Commerce Identifier</label>
+      <label>Wingify Search API</label>
       <input id="cred-abt-id" type="text" value="${siteConfig.abtId || ''}" autocomplete="off">
     </div>
     <button class="creds-save-btn" id="creds-save-btn" onclick="saveCredentials()">Save Changes</button>
