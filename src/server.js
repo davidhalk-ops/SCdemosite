@@ -205,10 +205,12 @@ app.get('/vwo-sdk.js', (req, res) => {
   res.sendFile(path.join(__dirname, '../node_modules/vwo-fme-node-sdk/dist/client/vwo-fme-javascript-sdk.min.js'));
 });
 
-// GET /api/config — returns the visitor's own VWO credentials for client-side SDK init.
-// Looks up by visitorId first; falls back to ?email= query param; then checks Redis.
-app.get('/api/config', async (req, res) => {
-  let email = visitorEmailMap.get(req.visitorId) || req.query.email || null;
+// Resolves the requesting visitor's email + credentials. Redis is the
+// cross-instance source of truth, so it's always checked (when configured)
+// and preferred over the local process cache — a credential save made on
+// one serverless instance is then visible immediately on every other.
+async function _resolveEmailAndCreds(req, emailOverride) {
+  let email = visitorEmailMap.get(req.visitorId) || emailOverride || null;
 
   // If no email in memory, try Redis visitorId → email mapping
   if (!email && redis) {
@@ -220,13 +222,20 @@ app.get('/api/config', async (req, res) => {
 
   let c = email ? credStore.get(email) : null;
 
-  // If creds not in memory, try Redis
-  if (!c && email && redis) {
+  if (email && redis) {
     try {
-      c = await redis.get(`creds:${email}`);
-      if (c) credStore.set(email, c);
+      const fresh = await redis.get(`creds:${email}`);
+      if (fresh) { c = fresh; credStore.set(email, fresh); }
     } catch(e) { console.error('[Redis] creds get failed:', e.message); }
   }
+
+  return { email, c };
+}
+
+// GET /api/config — returns the visitor's own VWO credentials for client-side SDK init.
+// Looks up by visitorId first; falls back to ?email= query param; then checks Redis.
+app.get('/api/config', async (req, res) => {
+  const { email, c } = await _resolveEmailAndCreds(req, req.query.email || null);
 
   if (!c?.sdkKey) return res.json({ hasCredentials: false, visitorId: req.visitorId });
 
@@ -368,8 +377,7 @@ app.post('/api/check-theme', async (req, res) => {
 // Checks the visitor's VWO account for required flags and creates any that are missing.
 // Flags managed: recommendations, pricePromotion
 app.post('/api/setup-flags', async (req, res) => {
-  const email = visitorEmailMap.get(req.visitorId);
-  const c     = email ? credStore.get(email) : null;
+  const { c } = await _resolveEmailAndCreds(req);
   if (!c?.apiKey) return res.status(400).json({ error: 'No API key stored' });
 
   const apiKey = decrypt(c.apiKey);
@@ -445,8 +453,7 @@ app.get('/api/search', async (req, res) => {
   const { text } = req.query;
   if (!text) return res.status(400).json({ error: 'text required' });
 
-  const email = visitorEmailMap.get(req.visitorId);
-  const c     = email ? credStore.get(email) : null;
+  const { c } = await _resolveEmailAndCreds(req);
   const abtId = c?.abtId || null;
   if (!abtId) return res.json({ hits: [], totalHits: 0, totalPages: 0, page: 0, noIdentifier: true });
 
@@ -469,8 +476,7 @@ app.get('/api/autocomplete', async (req, res) => {
   const { text, hitsPerPage } = req.query;
   if (!text) return res.json({ suggestions: [] });
 
-  const email = visitorEmailMap.get(req.visitorId);
-  const c     = email ? credStore.get(email) : null;
+  const { c } = await _resolveEmailAndCreds(req);
   const abtId = c?.abtId || null;
   if (!abtId) return res.json({ suggestions: [] });
 

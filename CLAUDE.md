@@ -52,14 +52,14 @@ Express REST API with server-side experiment resolution. Key flows:
    - **Keyed by email address** (not by cookie/visitorId) so the same user is recognised across browsers and server restarts.
    - **Encrypted at rest**: `sdkKey`, `apiKey`, and `recoToken` are AES-256-GCM encrypted before writing; decrypted transparently on read.
    - **Persisted to disk** in two JSON files in `os.tmpdir()` (`tn-credentials.json`, `tn-visitor-email.json`), loaded on startup.
-   - **Mirrored to Upstash Redis** (keys `creds:{email}` and `vemap:{visitorId}`) as the shared persistent store across all Vercel serverless instances. `GET /api/config` and `POST /api/verify-email` check Redis when credentials are not found in the instance-local memory store.
+   - **Mirrored to Upstash Redis** (keys `creds:{email}` and `vemap:{visitorId}`) as the shared persistent store across all Vercel serverless instances. Redis is the cross-instance source of truth: the shared `_resolveEmailAndCreds()` helper always checks it (when configured) and prefers it over the instance-local memory store, so a credential save on one instance is visible immediately on every other. `GET /api/config`, `POST /api/setup-flags`, `GET /api/search`, and `GET /api/autocomplete` all resolve credentials through this helper; `POST /api/verify-email` checks Redis directly for existence only.
    - **httpOnly cookie** (`tn_creds`, 1-year) set by the server on `POST /api/credentials` with plaintext credentials. Cookie restore middleware re-populates the in-memory store on cold starts without a Redis call, covering the same-browser case. Cookie is cleared on `DELETE /api/credentials`.
    - **Email-restore shortcut** — `POST /api/verify-email` returns `hasCredentials: true` when Redis has credentials for that email. The gate immediately fetches `GET /api/config?email=...` and skips all remaining steps, hiding the gate without re-entry.
    - `boot()` on the client calls `GET /api/config` directly (no localStorage read or silent POST needed).
    - The `visitorId` cookie is still used for VWO experiment bucketing, but credential lookup goes email → credentials.
    - `apiKey` (VWO REST API key) is never returned by `GET /api/config`.
 
-5. **VWO REST API Integration** — `POST /api/setup-flags` auto-creates flags in VWO via the management REST API. The current flag is `recommendations` (key: `recommendations`, type: `PERMANENT`) with variables `homepage_id`, `pdp_id`, and `cart_id` (all `string`, default `"none"`).
+5. **VWO REST API Integration** — `POST /api/setup-flags` auto-creates flags in VWO via the management REST API. Flags managed: `recommendations` (`PERMANENT`, variables `homepage_id`, `pdp_id`, `cart_id` — all `string`, default `"none"`) and `pricePromotion` (`PERMANENT`, variables `PromoBanner` `string` default `"false"` and `discountpercent` `int` default `0`).
 
 6. **Theme Selection** — `POST /api/check-theme` evaluates the `demoTheme` flag using the server-side VWO client (`.env` credentials). Called during onboarding with a `usertheme` custom variable (`"canada"` or `"france"`). Returns `{ theme, isEnabled }` and logs both values server-side.
 
