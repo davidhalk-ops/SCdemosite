@@ -206,10 +206,14 @@ app.get('/vwo-sdk.js', (req, res) => {
 });
 
 // Resolves the requesting visitor's email + credentials. Redis is the
-// cross-instance source of truth, so it's always checked (when configured)
-// and preferred over the local process cache — a credential save made on
-// one serverless instance is then visible immediately on every other.
-async function _resolveEmailAndCreds(req, emailOverride) {
+// cross-instance source of truth. By default (alwaysRefresh: true) it's
+// checked on every call and preferred over the local process cache, so a
+// credential save made on one serverless instance is visible immediately
+// on every other. Pass alwaysRefresh: false for latency-sensitive, high-
+// frequency callers (e.g. as-you-type search/autocomplete) — Redis is then
+// only consulted when the local cache has nothing at all (cold start),
+// avoiding a round-trip on every keystroke.
+async function _resolveEmailAndCreds(req, { emailOverride = null, alwaysRefresh = true } = {}) {
   let email = visitorEmailMap.get(req.visitorId) || emailOverride || null;
 
   // If no email in memory, try Redis visitorId → email mapping
@@ -222,7 +226,7 @@ async function _resolveEmailAndCreds(req, emailOverride) {
 
   let c = email ? credStore.get(email) : null;
 
-  if (email && redis) {
+  if (email && redis && (alwaysRefresh || !c)) {
     try {
       const fresh = await redis.get(`creds:${email}`);
       if (fresh) { c = fresh; credStore.set(email, fresh); }
@@ -235,7 +239,7 @@ async function _resolveEmailAndCreds(req, emailOverride) {
 // GET /api/config — returns the visitor's own VWO credentials for client-side SDK init.
 // Looks up by visitorId first; falls back to ?email= query param; then checks Redis.
 app.get('/api/config', async (req, res) => {
-  const { email, c } = await _resolveEmailAndCreds(req, req.query.email || null);
+  const { email, c } = await _resolveEmailAndCreds(req, { emailOverride: req.query.email || null });
 
   if (!c?.sdkKey) return res.json({ hasCredentials: false, visitorId: req.visitorId });
 
@@ -453,7 +457,7 @@ app.get('/api/search', async (req, res) => {
   const { text } = req.query;
   if (!text) return res.status(400).json({ error: 'text required' });
 
-  const { c } = await _resolveEmailAndCreds(req);
+  const { c } = await _resolveEmailAndCreds(req, { alwaysRefresh: false });
   const abtId = c?.abtId || null;
   if (!abtId) return res.json({ hits: [], totalHits: 0, totalPages: 0, page: 0, noIdentifier: true });
 
@@ -476,7 +480,7 @@ app.get('/api/autocomplete', async (req, res) => {
   const { text, hitsPerPage } = req.query;
   if (!text) return res.json({ suggestions: [] });
 
-  const { c } = await _resolveEmailAndCreds(req);
+  const { c } = await _resolveEmailAndCreds(req, { alwaysRefresh: false });
   const abtId = c?.abtId || null;
   if (!abtId) return res.json({ suggestions: [] });
 
