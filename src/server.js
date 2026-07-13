@@ -91,6 +91,12 @@ const VEMAP_FILE   = path.join(os.tmpdir(), 'tn-visitor-email.json');
 // In-memory stores — hydrated from disk at startup
 const credStore       = new Map(); // email      → { email, accountId, sdkKey(enc), apiKey(enc), recoId, recoToken(enc), abtId, theme }
 const visitorEmailMap = new Map(); // visitorId  → email
+const credFetchedAt   = new Map(); // email      → ms timestamp this instance last confirmed creds against Redis
+
+// Bounds how long a warm serverless instance can keep serving a locally-cached
+// credentials object (e.g. from the tn_creds cookie or an earlier Redis read)
+// without re-checking Redis, for callers that opt out of always-refresh.
+const CRED_STALE_MS = 5000;
 
 function _saveCredStore() {
   const obj = {};
@@ -211,8 +217,10 @@ app.get('/vwo-sdk.js', (req, res) => {
 // credential save made on one serverless instance is visible immediately
 // on every other. Pass alwaysRefresh: false for latency-sensitive, high-
 // frequency callers (e.g. as-you-type search/autocomplete) — Redis is then
-// only consulted when the local cache has nothing at all (cold start),
-// avoiding a round-trip on every keystroke.
+// only consulted when the local cache is empty or hasn't been confirmed
+// fresh within CRED_STALE_MS, so a burst of keystrokes shares one Redis
+// round-trip instead of paying for one on every request, while a warm
+// instance still can't serve a stale/incomplete cached entry indefinitely.
 async function _resolveEmailAndCreds(req, { emailOverride = null, alwaysRefresh = true } = {}) {
   let email = visitorEmailMap.get(req.visitorId) || emailOverride || null;
 
@@ -225,11 +233,13 @@ async function _resolveEmailAndCreds(req, { emailOverride = null, alwaysRefresh 
   }
 
   let c = email ? credStore.get(email) : null;
+  const isStale = !c || (Date.now() - (credFetchedAt.get(email) || 0)) > CRED_STALE_MS;
 
-  if (email && redis && (alwaysRefresh || !c)) {
+  if (email && redis && (alwaysRefresh || isStale)) {
     try {
       const fresh = await redis.get(`creds:${email}`);
       if (fresh) { c = fresh; credStore.set(email, fresh); }
+      credFetchedAt.set(email, Date.now());
     } catch(e) { console.error('[Redis] creds get failed:', e.message); }
   }
 
