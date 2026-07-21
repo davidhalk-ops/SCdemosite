@@ -858,6 +858,7 @@ window._vwo_code || (function() {
 </div>
 <div id="nav-search-dropdown" style="display:none;position:fixed;z-index:300;background:white;border-radius:var(--radius-lg);box-shadow:0 24px 80px rgba(26,26,24,0.22);border:1px solid var(--gray-light);overflow:hidden;animation:modalIn 0.15s ease"></div>
 <div id="app"></div>
+<div id="convai-widget-slot"></div>
 
 <script>
 console.log('console log');
@@ -1209,6 +1210,24 @@ function loadRecosTag(siteId) {
   script.src = `https://client.get-potions.com/${siteId}/recos-tag.js`;
   script.async = true;
   document.head.appendChild(script);
+}
+
+// ====== ELEVENLABS CONVAI WIDGET ======
+// Restricted to a single demo account — loads the ElevenLabs conversational
+// agent widget script + custom element only when siteConfig.email matches.
+const CONVAI_ALLOWED_EMAIL = 'david.halk@abtasty.com';
+const CONVAI_AGENT_ID = 'agent_2901ky33frgrer9vhg7m5t19cvvf';
+
+function loadConvaiWidget() {
+  const slot = document.getElementById('convai-widget-slot');
+  if (!slot) return;
+  if (!document.querySelector('script[src*="convai-widget-embed"]')) {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+    script.async = true;
+    document.head.appendChild(script);
+  }
+  slot.innerHTML = `<elevenlabs-convai agent-id="${CONVAI_AGENT_ID}"></elevenlabs-convai>`;
 }
 
 // ====== EMOTIONS AI ======
@@ -2900,6 +2919,7 @@ async function boot() {
   }
   applyTheme(siteConfig.theme || 'canada');
   loadRecosTag(siteConfig.recoId || '1120');
+  if (siteConfig.email === CONVAI_ALLOWED_EMAIL) loadConvaiWidget();
   render();
   if (window._completeLoadBar) window._completeLoadBar();
 
